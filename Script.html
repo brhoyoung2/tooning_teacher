@@ -1,0 +1,489 @@
+<script>
+// =============================================
+// 투닝 강사 시간등록 서비스 - 클라이언트 JS
+// =============================================
+
+const App = (() => {
+  const LOGO_URL = 'https://yt3.googleusercontent.com/U94zzlLDbgrOeTFNp0WHjRD1YrZ-CYCb6vxxxoAedp3Khv6W8vQMbyMVZw-T3XT8p3flgF8O=s900-c-k-c0x00ffffff-no-rj';
+  const HOURS = Array.from({length: 12}, (_, i) => `${String(i + 9).padStart(2,'0')}:00`);
+  const DAYS_KO = ['일','월','화','수','목','금','토'];
+
+  let state = {
+    mode: null, // 'instructor' | 'teacher'
+    currentDate: todayStr(),
+    region: '',
+    regions: [],
+    slotStatus: {},
+    scheduleList: [],
+    myRegistrations: [],
+    selectedSlots: [],
+    instructorTab: 'grid', // 'grid' | 'mine'
+    weekOffset: 0,
+    isLoading: false,
+  };
+
+  // ---- UTILS ----
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function formatDateKo(str) {
+    const [y, m, d] = str.split('-');
+    const day = new Date(str);
+    return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일 (${DAYS_KO[day.getDay()]})`;
+  }
+  function addDays(str, n) {
+    const d = new Date(str); d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function getWeekDates(offset) {
+    const today = new Date();
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - today.getDay() + 1 + offset * 7);
+    return Array.from({length: 7}, (_, i) => {
+      const d = new Date(mon); d.setDate(mon.getDate() + i);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    });
+  }
+
+  // ---- LOADING / TOAST ----
+  function showLoading(msg = '처리 중...') {
+    state.isLoading = true;
+    document.getElementById('loading-text').textContent = msg;
+    document.getElementById('overlay-loading').classList.add('active');
+    document.querySelectorAll('button, input, select').forEach(el => el.disabled = true);
+  }
+  function hideLoading() {
+    state.isLoading = false;
+    document.getElementById('overlay-loading').classList.remove('active');
+    document.querySelectorAll('button, input, select').forEach(el => el.disabled = false);
+  }
+  function showToast(msg, type = 'info', duration = 3500) {
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'toastOut 0.3s forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  // ---- PAGE NAV ----
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  // ---- LANDING ----
+  function initLanding() {
+    showPage('page-landing');
+    document.getElementById('btn-instructor').onclick = () => enterMode('instructor');
+    document.getElementById('btn-teacher').onclick = () => enterMode('teacher');
+  }
+
+  function enterMode(mode) {
+    state.mode = mode;
+    state.currentDate = todayStr();
+    state.selectedSlots = [];
+    if (mode === 'instructor') {
+      showPage('page-instructor');
+      initInstructor();
+    } else {
+      showPage('page-teacher');
+      initTeacher();
+    }
+  }
+
+  // ---- INSTRUCTOR PAGE ----
+  function initInstructor() {
+    document.getElementById('instructor-back').onclick = () => showPage('page-landing');
+    document.getElementById('fab-register').onclick = openRegisterModal;
+    renderInstructorTabs();
+    renderInstructorFilter();
+    loadSlots();
+
+    document.getElementById('inst-tab-grid').onclick = () => switchInstructorTab('grid');
+    document.getElementById('inst-tab-mine').onclick = () => switchInstructorTab('mine');
+  }
+
+  function switchInstructorTab(tab) {
+    state.instructorTab = tab;
+    document.getElementById('inst-tab-grid').classList.toggle('active', tab === 'grid');
+    document.getElementById('inst-tab-mine').classList.toggle('active', tab === 'mine');
+    if (tab === 'grid') {
+      document.getElementById('grid-view').style.display = '';
+      document.getElementById('mine-view').style.display = 'none';
+      loadSlots();
+    } else {
+      document.getElementById('grid-view').style.display = 'none';
+      document.getElementById('mine-view').style.display = '';
+      renderMineView();
+    }
+  }
+
+  function renderInstructorFilter() {
+    const bar = document.getElementById('instructor-filter');
+    bar.innerHTML = `
+      <div class="date-nav">
+        <button class="btn-nav" id="inst-prev">‹</button>
+        <span class="date-display" id="inst-date-display">${formatDateKo(state.currentDate)}</span>
+        <button class="btn-nav" id="inst-next">›</button>
+      </div>
+      <select class="filter-select" id="inst-region-select">
+        <option value="">전체 지역</option>
+        ${state.regions.map(r => `<option value="${r}">${r}</option>`).join('')}
+      </select>
+    `;
+    document.getElementById('inst-prev').onclick = () => changeDate(-1);
+    document.getElementById('inst-next').onclick = () => changeDate(1);
+    document.getElementById('inst-region-select').onchange = e => {
+      state.region = e.target.value;
+      loadSlots();
+    };
+  }
+
+  function changeDate(delta) {
+    state.currentDate = addDays(state.currentDate, delta);
+    document.getElementById('inst-date-display').textContent = formatDateKo(state.currentDate);
+    loadSlots();
+  }
+
+  function loadSlots() {
+    showLoading('시간표 불러오는 중...');
+    google.script.run
+      .withSuccessHandler(res => {
+        hideLoading();
+        if (res.success) {
+          state.slotStatus = res.slots;
+          renderTimeGrid();
+        } else {
+          showToast(res.message, 'error');
+        }
+      })
+      .withFailureHandler(err => {
+        hideLoading();
+        showToast('시간표를 불러오지 못했습니다.', 'error');
+      })
+      .getSlotStatus(state.currentDate, state.region || '');
+  }
+
+  function renderTimeGrid() {
+    const grid = document.getElementById('time-grid-body');
+    grid.innerHTML = HOURS.map(h => {
+      const slot = state.slotStatus[h] || { booked: false };
+      const cls = slot.booked ? 'slot-booked' : 'slot-available';
+      const text = slot.booked ? `${slot.name} 강사 예약됨` : '등록 가능';
+      const tag = slot.booked ? `<span class="slot-booked-tag">예약중</span>` : '';
+      return `
+        <div class="time-slot-row ${cls}">
+          <div class="time-label">${h}</div>
+          <div class="time-cell">
+            <div class="slot-indicator"></div>
+            <span class="slot-text">${text}</span>
+            ${tag}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderMineView() {
+    const container = document.getElementById('mine-view');
+    const stored = JSON.parse(localStorage.getItem('myRegs') || '[]');
+    if (!stored.length) {
+      container.innerHTML = `<div class="schedule-empty"><div class="empty-icon">📭</div><p>등록된 강의가 없습니다</p><small>아래 + 버튼을 눌러 강의 시간을 등록하세요</small></div>`;
+      return;
+    }
+    container.innerHTML = `
+      <div class="section-title"><span class="dot"></span>내 등록 강의 (${stored.length}건)</div>
+      ${stored.map(r => `
+        <div class="my-reg-card">
+          <div class="reg-info">
+            <div class="reg-time">📅 ${r.date} ${r.startTime}~${r.endTime}</div>
+            <div class="reg-meta">${r.name} • ${r.region}</div>
+          </div>
+          <button class="btn-cancel" onclick="App.cancelReg('${r.id}','${r.phone}')">취소</button>
+        </div>`).join('')}`;
+  }
+
+  // ---- REGISTER MODAL ----
+  function openRegisterModal() {
+    const modal = document.getElementById('modal-register');
+    const overlay = document.getElementById('overlay-modal');
+    // Pre-fill date, region chips
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-phone').value = '';
+    document.getElementById('reg-region').value = state.region || '';
+    document.getElementById('reg-date').value = state.currentDate;
+    document.getElementById('reg-date').min = todayStr();
+    renderTimeChips(state.currentDate, state.region || '');
+    overlay.classList.add('active');
+    document.getElementById('reg-name').focus();
+
+    document.getElementById('reg-date').onchange = e => {
+      renderTimeChips(e.target.value, document.getElementById('reg-region').value);
+    };
+    document.getElementById('reg-region').onchange = e => {
+      renderTimeChips(document.getElementById('reg-date').value, e.target.value);
+    };
+  }
+
+  function closeRegisterModal() {
+    document.getElementById('overlay-modal').classList.remove('active');
+    state.selectedSlots = [];
+  }
+
+  function renderTimeChips(date, region) {
+    showLoading('시간 정보 확인 중...');
+    google.script.run
+      .withSuccessHandler(res => {
+        hideLoading();
+        if (!res.success) return;
+        const slots = res.slots;
+        const container = document.getElementById('time-chips-wrap');
+        state.selectedSlots = [];
+        updateSelectedTimeDisplay();
+        container.innerHTML = HOURS.map(h => {
+          const slot = slots[h] || { booked: false };
+          const cls = slot.booked ? 'chip-booked' : '';
+          const label = slot.booked ? `${h} 예약됨` : h;
+          return `<button class="time-chip ${cls}" data-hour="${h}" onclick="App.toggleChip(this,'${h}')" ${slot.booked ? 'disabled' : ''}>${label}</button>`;
+        }).join('');
+      })
+      .withFailureHandler(() => { hideLoading(); })
+      .getSlotStatus(date, region);
+  }
+
+  function toggleChip(el, hour) {
+    if (el.classList.contains('chip-booked')) return;
+    el.classList.toggle('chip-selected');
+    const idx = state.selectedSlots.indexOf(hour);
+    if (idx > -1) state.selectedSlots.splice(idx, 1);
+    else state.selectedSlots.push(hour);
+    state.selectedSlots.sort();
+    updateSelectedTimeDisplay();
+  }
+
+  function updateSelectedTimeDisplay() {
+    const el = document.getElementById('selected-time-display');
+    if (!state.selectedSlots.length) {
+      el.textContent = '시간을 선택해주세요';
+      el.style.color = 'var(--gray-400)';
+      return;
+    }
+    el.style.color = 'var(--primary)';
+    const start = state.selectedSlots[0];
+    const lastHour = parseInt(state.selectedSlots[state.selectedSlots.length - 1]) + 1;
+    const end = `${String(lastHour).padStart(2,'0')}:00`;
+    // check continuity
+    const hours = state.selectedSlots.map(s => parseInt(s));
+    let continuous = true;
+    for (let i = 1; i < hours.length; i++) {
+      if (hours[i] !== hours[i-1] + 1) { continuous = false; break; }
+    }
+    if (!continuous) {
+      el.textContent = '연속된 시간만 선택 가능합니다';
+      el.style.color = 'var(--danger)';
+    } else {
+      el.textContent = `${start} ~ ${end} (${state.selectedSlots.length}시간)`;
+    }
+  }
+
+  function submitRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const region = document.getElementById('reg-region').value;
+    const date = document.getElementById('reg-date').value;
+
+    if (!name || !phone || !region || !date || !state.selectedSlots.length) {
+      showToast('모든 항목을 입력하고 시간을 선택해주세요.', 'warning'); return;
+    }
+    const hours = state.selectedSlots.map(s => parseInt(s));
+    let continuous = true;
+    for (let i = 1; i < hours.length; i++) {
+      if (hours[i] !== hours[i-1] + 1) { continuous = false; break; }
+    }
+    if (!continuous) { showToast('연속된 시간대만 선택 가능합니다.', 'warning'); return; }
+
+    const startTime = state.selectedSlots[0];
+    const endHour = parseInt(state.selectedSlots[state.selectedSlots.length - 1]) + 1;
+    const endTime = `${String(endHour).padStart(2,'0')}:00`;
+
+    closeRegisterModal();
+    showLoading('등록 중...');
+    google.script.run
+      .withSuccessHandler(res => {
+        hideLoading();
+        if (res.success) {
+          showToast(res.message, 'success');
+          // Save to localStorage for "my registrations"
+          const regs = JSON.parse(localStorage.getItem('myRegs') || '[]');
+          // We don't have ID from server yet; we'll match by name+date+time
+          regs.push({ id: 'local-' + Date.now(), name, phone, region, date, startTime, endTime });
+          localStorage.setItem('myRegs', JSON.stringify(regs));
+          loadSlots();
+        } else {
+          showToast(res.message, 'error');
+          document.getElementById('overlay-modal').classList.add('active');
+        }
+      })
+      .withFailureHandler(err => {
+        hideLoading();
+        showToast('등록 중 오류가 발생했습니다.', 'error');
+        document.getElementById('overlay-modal').classList.add('active');
+      })
+      .registerTime({ name, phone, region, date, startTime, endTime });
+  }
+
+  function cancelReg(id, phone) {
+    const ph = prompt('등록 취소를 위해 휴대폰 번호를 입력해주세요:');
+    if (!ph) return;
+    showLoading('취소 처리 중...');
+    google.script.run
+      .withSuccessHandler(res => {
+        hideLoading();
+        if (res.success) {
+          showToast(res.message, 'success');
+          const regs = JSON.parse(localStorage.getItem('myRegs') || '[]').filter(r => r.id !== id);
+          localStorage.setItem('myRegs', JSON.stringify(regs));
+          renderMineView();
+        } else {
+          showToast(res.message, 'error');
+        }
+      })
+      .withFailureHandler(() => {
+        hideLoading();
+        showToast('취소 중 오류가 발생했습니다.', 'error');
+      })
+      .deleteRegistration(id, ph);
+  }
+
+  // ---- TEACHER PAGE ----
+  function initTeacher() {
+    document.getElementById('teacher-back').onclick = () => showPage('page-landing');
+    state.weekOffset = 0;
+    renderTeacherFilter();
+    renderWeekStrip();
+    loadSchedule();
+
+    document.getElementById('week-prev').onclick = () => { state.weekOffset--; renderWeekStrip(); };
+    document.getElementById('week-next').onclick = () => { state.weekOffset++; renderWeekStrip(); };
+    document.getElementById('teacher-region-select').onchange = e => {
+      state.region = e.target.value;
+      loadSchedule();
+    };
+  }
+
+  function renderTeacherFilter() {
+    const sel = document.getElementById('teacher-region-select');
+    sel.innerHTML = `<option value="">전체 지역</option>${state.regions.map(r=>`<option value="${r}">${r}</option>`).join('')}`;
+  }
+
+  function renderWeekStrip() {
+    const dates = getWeekDates(state.weekOffset);
+    const today = todayStr();
+    const strip = document.getElementById('week-strip');
+    const dayNames = ['월','화','수','목','금','토','일'];
+    strip.innerHTML = dates.map((d, i) => {
+      const [,, dd] = d.split('-');
+      const isToday = d === today;
+      const isSelected = d === state.currentDate;
+      return `
+        <div class="day-pill ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="App.selectDay('${d}')">
+          <span class="day-name">${dayNames[i]}</span>
+          <span class="day-num">${parseInt(dd)}</span>
+        </div>`;
+    }).join('');
+
+    // week range display
+    const [y1, m1, d1] = dates[0].split('-');
+    const [y2, m2, d2] = dates[6].split('-');
+    document.getElementById('week-range').textContent = `${parseInt(m1)}월 ${parseInt(d1)}일 ~ ${parseInt(m2)}월 ${parseInt(d2)}일`;
+  }
+
+  function selectDay(date) {
+    state.currentDate = date;
+    renderWeekStrip();
+    loadSchedule();
+  }
+
+  function loadSchedule() {
+    const dateStr = formatDateKo(state.currentDate);
+    document.getElementById('schedule-date-label').textContent = dateStr;
+    showLoading('강사 시간표 불러오는 중...');
+    google.script.run
+      .withSuccessHandler(res => {
+        hideLoading();
+        state.scheduleList = Array.isArray(res) ? res : [];
+        renderScheduleCards();
+      })
+      .withFailureHandler(() => {
+        hideLoading();
+        showToast('시간표를 불러오지 못했습니다.', 'error');
+      })
+      .getRegisteredTimes({ date: state.currentDate, region: state.region || undefined });
+  }
+
+  function renderScheduleCards() {
+    const container = document.getElementById('schedule-cards');
+    const filtered = state.scheduleList;
+    if (!filtered.length) {
+      container.innerHTML = `
+        <div class="schedule-empty">
+          <div class="empty-icon">📋</div>
+          <p>등록된 강사 일정이 없습니다</p>
+          <small>${formatDateKo(state.currentDate)}에는 아직 등록된 강의가 없어요</small>
+        </div>`;
+      return;
+    }
+    container.innerHTML = filtered.map(r => {
+      const duration = parseInt(r['종료시간']) - parseInt(r['시작시간']);
+      return `
+        <div class="schedule-card">
+          <div class="scard-icon">👩‍🏫</div>
+          <div class="scard-body">
+            <div class="scard-name">${r['이름']} 강사</div>
+            <div class="scard-time">🕐 ${r['시작시간']} ~ ${r['종료시간']}</div>
+            <div class="scard-meta">
+              <span class="scard-region-tag">📍 ${r['지역']}</span>
+              <span class="scard-tag">${r['시작시간']}~${r['종료시간']}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---- INIT ----
+  function init() {
+    // Load regions
+    google.script.run
+      .withSuccessHandler(regions => {
+        state.regions = regions;
+        // Populate region selects
+        ['reg-region', 'inst-region-select', 'teacher-region-select'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (id === 'reg-region') {
+            el.innerHTML = `<option value="">지역 선택</option>${regions.map(r=>`<option value="${r}">${r}</option>`).join('')}`;
+          }
+        });
+      })
+      .getRegions();
+    initLanding();
+  }
+
+  return {
+    init,
+    toggleChip,
+    submitRegister,
+    closeRegisterModal,
+    cancelReg,
+    selectDay,
+  };
+})();
+
+window.addEventListener('load', App.init);
+</script>

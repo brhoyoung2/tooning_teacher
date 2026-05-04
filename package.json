@@ -1,0 +1,10 @@
+{
+  "name": "tooning-teacher",
+  "version": "1.2.0",
+  "scripts": {
+    "deploy": "clasp push && clasp deploy --description \"v1.2.0\""
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}

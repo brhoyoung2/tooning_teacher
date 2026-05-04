@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>투닝 강사 시간등록 서비스</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+
+    :root {
+      --primary: #FF2778;
+      --primary-dark: #D91A63;
+      --primary-light: #FF6BA8;
+      --primary-bg: #FFF0F6;
+      --secondary: #6C63FF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-300: #D1D5DB;
+      --gray-400: #9CA3AF;
+      --gray-500: #6B7280;
+      --gray-600: #4B5563;
+      --gray-700: #374151;
+      --gray-800: #1F2937;
+      --gray-900: #111827;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --radius-lg: 24px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 48px rgba(0,0,0,0.15);
+      --shadow-primary: 0 8px 32px rgba(255,39,120,0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ---- OVERLAY ---- */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .overlay.active { opacity: 1; pointer-events: all; }
+
+    /* ---- LOADING ---- */
+    .loading-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .spinner {
+      width: 52px; height: 52px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .loading-wrap p { color: #fff; font-size: 14px; font-weight: 500; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- TOAST ---- */
+    .toast-container {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 2000; display: flex; flex-direction: column; gap: 10px;
+      pointer-events: none; width: min(90vw, 400px);
+    }
+    .toast {
+      background: var(--gray-900); color: #fff;
+      padding: 14px 20px; border-radius: var(--radius);
+      font-size: 14px; font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      pointer-events: all;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .toast.warning { background: var(--warning); color: var(--gray-900); }
+    .toast-icon { font-size: 18px; flex-shrink: 0; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastOut { to { opacity: 0; transform: translateY(-16px) scale(0.9); } }
+
+    /* ---- PAGES ---- */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; flex-direction: column; }
+
+    /* ===================== LANDING ===================== */
+    #page-landing {
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+      position: relative; overflow: hidden;
+    }
+    #page-landing::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 20% 80%, rgba(255,39,120,0.18) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(108,99,255,0.15) 0%, transparent 50%);
+    }
+    .landing-inner {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 40px 24px; gap: 48px;
+    }
+    .landing-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .landing-logo {
+      width: 80px; height: 80px; border-radius: 20px; object-fit: cover;
+      box-shadow: 0 8px 32px rgba(255,39,120,0.4), 0 0 0 3px rgba(255,255,255,0.1);
+    }
+    .landing-title {
+      font-size: clamp(22px, 5vw, 32px); font-weight: 800;
+      color: #fff; text-align: center; line-height: 1.3; letter-spacing: -0.5px;
+    }
+    .landing-title span { color: var(--primary-light); }
+    .landing-subtitle { font-size: 14px; color: rgba(255,255,255,0.55); text-align: center; }
+    .landing-cards {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; width: 100%; max-width: 560px;
+    }
+    @media (max-width: 480px) { .landing-cards { grid-template-columns: 1fr; } }
+    .landing-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-lg); padding: 32px 24px;
+      cursor: pointer; text-align: center;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      backdrop-filter: blur(12px); position: relative; overflow: hidden;
+    }
+    .landing-card:hover { transform: translateY(-6px) scale(1.02); }
+    .card-instructor { border-color: rgba(255,39,120,0.3); }
+    .card-instructor:hover { background: rgba(255,39,120,0.12); border-color: var(--primary); box-shadow: 0 0 40px rgba(255,39,120,0.2); }
+    .card-teacher:hover { background: rgba(108,99,255,0.08); border-color: var(--secondary); box-shadow: 0 0 40px rgba(108,99,255,0.15); }
+    .card-emoji { font-size: 44px; margin-bottom: 12px; display: block; }
+    .card-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .card-desc { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+    .card-badge { display: inline-block; margin-top: 16px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .card-instructor .card-badge { background: var(--primary); color: #fff; }
+    .card-teacher .card-badge { background: var(--secondary); color: #fff; }
+    .landing-footer { color: rgba(255,255,255,0.25); font-size: 12px; text-align: center; }
+
+    /* ===================== APP HEADER ===================== */
+    .app-header {
+      background: #fff; border-bottom: 1px solid var(--gray-100);
+      padding: 0 20px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .btn-back {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: none; background: var(--gray-100); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; transition: all 0.2s; color: var(--gray-600);
+    }
+    .btn-back:hover { background: var(--gray-200); }
+    .header-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+    .header-title { font-size: 16px; font-weight: 700; color: var(--gray-800); letter-spacing: -0.3px; }
+    .header-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-instructor { background: var(--primary-bg); color: var(--primary); }
+    .badge-teacher { background: #EDE9FE; color: var(--secondary); }
+
+    /* ===================== FILTER BAR ===================== */
+    .filter-bar {
+      background: #fff; border-bottom: 1px solid var(--gray-100);
+      padding: 12px 20px; display: flex; gap: 10px; align-items: center;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-select {
+      padding: 8px 30px 8px 14px; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm); font-size: 14px;
+      background: #fff; cursor: pointer; font-family: inherit;
+      color: var(--gray-700); outline: none; transition: all 0.2s;
+      appearance: none; min-width: 120px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .filter-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,39,120,0.1); }
+    .date-nav { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .btn-nav {
+      width: 34px; height: 34px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--gray-200); background: #fff;
+      cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; color: var(--gray-600);
+    }
+    .btn-nav:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+    .date-display { font-size: 15px; font-weight: 600; color: var(--gray-800); white-space: nowrap; min-width: 130px; text-align: center; }
+
+    /* ===================== CONTENT ===================== */
+    .content-area { flex: 1; padding: 20px; overflow-y: auto; }
+    .section-title {
+      font-size: 15px; font-weight: 700; color: var(--gray-700);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+
+    /* ===================== TIME GRID ===================== */
+    .time-grid-wrap {
+      background: #fff; border-radius: var(--radius); border: 1px solid var(--gray-100);
+      overflow: hidden; box-shadow: var(--shadow);
+    }
+    .time-grid-header {
+      display: grid; grid-template-columns: 80px 1fr;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 12px 16px; gap: 12px;
+    }
+    .time-grid-header span { color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; }
+    .time-slot-row {
+      display: grid; grid-template-columns: 80px 1fr;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .time-slot-row:last-child { border-bottom: none; }
+    .time-label {
+      padding: 14px 12px 14px 16px; font-size: 13px; font-weight: 600; color: var(--gray-500);
+      border-right: 1px solid var(--gray-100); display: flex; align-items: center;
+    }
+    .time-cell { padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+    .slot-available { background: #fff; }
+    .slot-booked { background: #FFF5F7; }
+    .slot-indicator { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .slot-available .slot-indicator { background: var(--success); }
+    .slot-booked .slot-indicator { background: var(--primary); }
+    .slot-text { font-size: 13px; font-weight: 500; }
+    .slot-available .slot-text { color: var(--gray-500); }
+    .slot-booked .slot-text { color: var(--primary-dark); }
+    .slot-booked-tag {
+      margin-left: auto; background: var(--primary-bg); color: var(--primary);
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+
+    /* ===================== LEGEND ===================== */
+    .legend { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-600); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ===================== FAB ===================== */
+    .fab {
+      position: fixed; bottom: 28px; right: 24px;
+      width: 58px; height: 58px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none; cursor: pointer; box-shadow: var(--shadow-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; color: #fff;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 50;
+    }
+    .fab:hover { transform: scale(1.12); box-shadow: 0 12px 40px rgba(255,39,120,0.45); }
+    .fab:active { transform: scale(0.95); }
+
+    /* ===================== MODAL ===================== */
+    .modal-box {
+      background: #fff; border-radius: var(--radius-lg);
+      width: min(92vw, 500px); max-height: 90vh; overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.88) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header { padding: 24px 24px 0; display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 20px; font-weight: 800; color: var(--gray-900); }
+    .modal-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+    .btn-close {
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: var(--gray-100); cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gray-500); transition: all 0.2s; flex-shrink: 0;
+    }
+    .btn-close:hover { background: var(--gray-200); }
+    .modal-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 18px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 13px; font-weight: 600; color: var(--gray-700); display: flex; align-items: center; gap: 4px; }
+    .form-label .required { color: var(--primary); }
+    .form-input, .form-select {
+      padding: 12px 16px; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm); font-size: 15px;
+      font-family: inherit; color: var(--gray-800); outline: none;
+      transition: all 0.2s; background: #fff; width: 100%;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,39,120,0.1); }
+    .form-input::placeholder { color: var(--gray-400); }
+    .form-select {
+      appearance: none; cursor: pointer; padding-right: 36px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+    }
+    .time-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .time-chip {
+      padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1.5px solid var(--gray-200); background: #fff; cursor: pointer;
+      transition: all 0.2s; color: var(--gray-600);
+    }
+    .time-chip:hover:not(.chip-booked) { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+    .time-chip.chip-selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .time-chip.chip-booked { background: var(--gray-100); color: var(--gray-400); cursor: not-allowed; border-color: var(--gray-100); text-decoration: line-through; }
+    .form-hint { font-size: 12px; color: var(--gray-400); }
+    .selected-time-display {
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      background: var(--primary-bg); color: var(--primary);
+      font-size: 14px; font-weight: 600; text-align: center;
+      min-height: 40px; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-submit {
+      padding: 16px; border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; border: none; cursor: pointer;
+      font-size: 16px; font-weight: 700; font-family: inherit;
+      box-shadow: var(--shadow-primary); transition: all 0.2s;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(255,39,120,0.4); }
+    .btn-submit:disabled { background: var(--gray-300); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    /* ===================== TAB BAR ===================== */
+    .tab-bar { display: flex; background: var(--gray-100); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 20px; }
+    .tab-btn {
+      flex: 1; padding: 10px; border: none; background: transparent;
+      border-radius: 6px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; color: var(--gray-500); transition: all 0.2s;
+    }
+    .tab-btn.active { background: #fff; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+    /* ===================== MY REGISTRATIONS ===================== */
+    .my-reg-card {
+      background: #fff; border-radius: var(--radius); padding: 16px;
+      border: 1px solid var(--gray-100); box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+    }
+    .reg-info { flex: 1; min-width: 0; }
+    .reg-time { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .reg-meta { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
+    .btn-cancel {
+      padding: 8px 14px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--gray-200); background: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      color: var(--danger); font-family: inherit; transition: all 0.2s; flex-shrink: 0;
+    }
+    .btn-cancel:hover { background: #FFF0F0; border-color: var(--danger); }
+
+    /* ===================== SCHEDULE CARDS ===================== */
+    .schedule-cards { display: flex; flex-direction: column; gap: 12px; }
+    .schedule-empty { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+    .schedule-empty .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .schedule-empty p { font-size: 15px; font-weight: 500; }
+    .schedule-empty small { font-size: 13px; margin-top: 6px; display: block; }
+    .schedule-card {
+      background: #fff; border-radius: var(--radius); padding: 18px;
+      border: 1px solid var(--gray-100); box-shadow: var(--shadow);
+      display: flex; align-items: flex-start; gap: 16px; transition: transform 0.2s;
+    }
+    .schedule-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .scard-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 14px rgba(255,39,120,0.3);
+    }
+    .scard-body { flex: 1; min-width: 0; }
+    .scard-name { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .scard-time { font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+    .scard-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .scard-tag { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; background: var(--gray-100); color: var(--gray-600); }
+    .scard-region-tag { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #EDE9FE; color: var(--secondary); }
+
+    /* ===================== WEEK STRIP ===================== */
+    .week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
+    .day-pill {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 10px 4px; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.2s; border: 1.5px solid transparent;
+    }
+    .day-pill:hover { background: var(--primary-bg); }
+    .day-pill.selected { background: var(--primary); border-color: var(--primary); }
+    .day-name { font-size: 11px; font-weight: 600; color: var(--gray-400); }
+    .day-num { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+    .day-pill.selected .day-name, .day-pill.selected .day-num { color: #fff; }
+    .day-pill.today .day-num { color: var(--primary); }
+    .day-pill.today.selected .day-num { color: #fff; }
+
+    /* ===================== RESPONSIVE ===================== */
+    @media (max-width: 600px) {
+      .content-area { padding: 16px; }
+      .filter-bar { padding: 10px 16px; }
+      .modal-header, .modal-body { padding-left: 18px; padding-right: 18px; }
+      .app-header { padding: 0 16px; }
+    }
+    @media (min-width: 900px) { .fab { bottom: 40px; right: 40px; } }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ============ GLOBAL OVERLAYS ============ -->
+<div class="overlay" id="overlay-loading">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <p id="loading-text">처리 중...</p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-modal">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📝 강의 시간 등록</div>
+        <div class="modal-subtitle">가능한 시간대를 선택하고 정보를 입력하세요</div>
+      </div>
+      <button class="btn-close" onclick="App.closeRegisterModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">강사 이름 <span class="required">*</span></label>
+        <input type="text" id="reg-name" class="form-input" placeholder="이름을 입력하세요" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">휴대폰 번호 <span class="required">*</span></label>
+        <input type="tel" id="reg-phone" class="form-input" placeholder="010-0000-0000" maxlength="13">
+      </div>
+      <div class="form-group">
+        <label class="form-label">지역 <span class="required">*</span></label>
+        <select id="reg-region" class="form-select">
+          <option value="">지역 선택</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">강의 날짜 <span class="required">*</span></label>
+        <input type="date" id="reg-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">가능 시간 선택 <span class="required">*</span></label>
+        <p class="form-hint">연속된 시간대를 선택해주세요. 취소선 시간은 이미 예약되었습니다.</p>
+        <div class="time-chips" id="time-chips-wrap"></div>
+        <div class="selected-time-display" id="selected-time-display">시간을 선택해주세요</div>
+      </div>
+      <button class="btn-submit" onclick="App.submitRegister()">✅ 강의 시간 등록하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============ PAGE: LANDING ============ -->
+<div class="page active" id="page-landing">
+  <div class="landing-inner">
+    <div class="landing-logo-wrap">
+      <img src="https://yt3.googleusercontent.com/U94zzlLDbgrOeTFNp0WHjRD1YrZ-CYCb6vxxxoAedp3Khv6W8vQMbyMVZw-T3XT8p3flgF8O=s900-c-k-c0x00ffffff-no-rj"
+        alt="Tooning" class="landing-logo" onerror="this.style.display='none'">
+      <div>
+        <div class="landing-title">투닝 강사<br><span>시간등록 서비스</span></div>
+        <div class="landing-subtitle">Tooning Instructor Schedule Management</div>
+      </div>
+    </div>
+    <div class="landing-cards">
+      <div class="landing-card card-instructor" id="btn-instructor" role="button" tabindex="0">
+        <span class="card-emoji">👩‍🏫</span>
+        <div class="card-title">투닝 강사</div>
+        <div class="card-desc">강의 가능 시간을<br>등록하고 관리하세요</div>
+        <span class="card-badge">시간 등록하기</span>
+      </div>
+      <div class="landing-card card-teacher" id="btn-teacher" role="button" tabindex="0">
+        <span class="card-emoji">🏫</span>
+        <div class="card-title">학교 선생님</div>
+        <div class="card-desc">투닝 강사의<br>가능 시간을 확인하세요</div>
+        <span class="card-badge">시간표 보기</span>
+      </div>
+    </div>
+    <div class="landing-footer">© 2025 Tooning · 강사 시간관리 시스템<br><span id="app-version" style="font-size:11px;opacity:0.4;margin-top:4px;display:block;"></span></div>
+  </div>
+</div>
+
+<!-- ============ PAGE: INSTRUCTOR ============ -->
+<div class="page" id="page-instructor">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" id="instructor-back">‹</button>
+      <img src="https://yt3.googleusercontent.com/U94zzlLDbgrOeTFNp0WHjRD1YrZ-CYCb6vxxxoAedp3Khv6W8vQMbyMVZw-T3XT8p3flgF8O=s900-c-k-c0x00ffffff-no-rj"
+        alt="logo" class="header-logo" onerror="this.style.display='none'">
+      <span class="header-title">강사 시간 관리</span>
+    </div>
+    <span class="header-badge badge-instructor">투닝 강사</span>
+  </header>
+  <div class="filter-bar" id="instructor-filter"></div>
+  <div class="content-area">
+    <div class="tab-bar">
+      <button class="tab-btn active" id="inst-tab-grid">📅 시간표 보기</button>
+      <button class="tab-btn" id="inst-tab-mine">📋 내 등록 목록</button>
+    </div>
+    <div id="grid-view">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>등록 가능</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>이미 예약됨</span></div>
+      </div>
+      <div class="section-title"><span class="dot"></span>강의 시간 현황</div>
+      <div class="time-grid-wrap">
+        <div class="time-grid-header"><span>시간</span><span>상태</span></div>
+        <div id="time-grid-body"></div>
+      </div>
+    </div>
+    <div id="mine-view" style="display:none"></div>
+  </div>
+  <button class="fab" id="fab-register" aria-label="강의 시간 등록">＋</button>
+</div>
+
+<!-- ============ PAGE: TEACHER ============ -->
+<div class="page" id="page-teacher">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="btn-back" id="teacher-back">‹</button>
+      <img src="https://yt3.googleusercontent.com/U94zzlLDbgrOeTFNp0WHjRD1YrZ-CYCb6vxxxoAedp3Khv6W8vQMbyMVZw-T3XT8p3flgF8O=s900-c-k-c0x00ffffff-no-rj"
+        alt="logo" class="header-logo" onerror="this.style.display='none'">
+      <span class="header-title">강사 가능 시간표</span>
+    </div>
+    <span class="header-badge badge-teacher">선생님</span>
+  </header>
+  <div class="filter-bar" style="justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn-nav" id="week-prev">‹</button>
+      <span style="font-size:14px;font-weight:600;color:var(--gray-700)" id="week-range"></span>
+      <button class="btn-nav" id="week-next">›</button>
+    </div>
+    <select class="filter-select" id="teacher-region-select">
+      <option value="">전체 지역</option>
+    </select>
+  </div>
+  <div class="content-area">
+    <div class="week-strip" id="week-strip"></div>
+    <div class="section-title"><span class="dot"></span><span id="schedule-date-label">날짜를 선택하세요</span></div>
+    <div id="schedule-cards" class="schedule-cards"></div>
+  </div>
+</div>
+
+<script>
+const App = (() => {
+  const HOURS = Array.from({length: 12}, (_, i) => String(i + 9).padStart(2,'0') + ':00');
+  const DAYS_KO = ['일','월','화','수','목','금','토'];
+
+  let state = {
+    mode: null,
+    currentDate: todayStr(),
+    region: '',
+    regions: [],
+    slotStatus: {},
+    scheduleList: [],
+    selectedSlots: [],
+    instructorTab: 'grid',
+    weekOffset: 0,
+  };
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function formatDateKo(str) {
+    const parts = str.split('-');
+    const day = new Date(str + 'T00:00:00');
+    return parts[0] + '년 ' + parseInt(parts[1]) + '월 ' + parseInt(parts[2]) + '일 (' + DAYS_KO[day.getDay()] + ')';
+  }
+  function addDays(str, n) {
+    const d = new Date(str + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function getWeekDates(offset) {
+    const today = new Date();
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7) + offset * 7);
+    return Array.from({length: 7}, function(_, i) {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    });
+  }
+
+  // ---- LOADING / TOAST ----
+  function showLoading(msg) {
+    document.getElementById('loading-text').textContent = msg || '처리 중...';
+    document.getElementById('overlay-loading').classList.add('active');
+    document.querySelectorAll('button,input,select').forEach(function(el){ el.disabled = true; });
+  }
+  function hideLoading() {
+    document.getElementById('overlay-loading').classList.remove('active');
+    document.querySelectorAll('button,input,select').forEach(function(el){ el.disabled = false; });
+  }
+  function showToast(msg, type, duration) {
+    var icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    var t = type || 'info';
+    var d = duration || 3500;
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + t;
+    toast.innerHTML = '<span class="toast-icon">' + (icons[t]||'ℹ️') + '</span><span>' + msg + '</span>';
+    container.appendChild(toast);
+    setTimeout(function() {
+      toast.style.animation = 'toastOut 0.3s forwards';
+      setTimeout(function(){ toast.remove(); }, 300);
+    }, d);
+  }
+
+  // ---- PAGE NAV ----
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ---- LANDING ----
+  function initLanding() {
+    showPage('page-landing');
+    document.getElementById('btn-instructor').onclick = function(){ enterMode('instructor'); };
+    document.getElementById('btn-teacher').onclick = function(){ enterMode('teacher'); };
+  }
+
+  function enterMode(mode) {
+    state.mode = mode;
+    state.currentDate = todayStr();
+    state.selectedSlots = [];
+    if (mode === 'instructor') { showPage('page-instructor'); initInstructor(); }
+    else { showPage('page-teacher'); initTeacher(); }
+  }
+
+  // ---- INSTRUCTOR ----
+  function initInstructor() {
+    document.getElementById('instructor-back').onclick = function(){ showPage('page-landing'); };
+    document.getElementById('fab-register').onclick = openRegisterModal;
+    document.getElementById('inst-tab-grid').onclick = function(){ switchTab('grid'); };
+    document.getElementById('inst-tab-mine').onclick = function(){ switchTab('mine'); };
+    renderInstructorFilter();
+    loadSlots();
+  }
+
+  function switchTab(tab) {
+    state.instructorTab = tab;
+    document.getElementById('inst-tab-grid').classList.toggle('active', tab === 'grid');
+    document.getElementById('inst-tab-mine').classList.toggle('active', tab === 'mine');
+    document.getElementById('grid-view').style.display = tab === 'grid' ? '' : 'none';
+    document.getElementById('mine-view').style.display = tab === 'mine' ? '' : 'none';
+    if (tab === 'grid') loadSlots();
+    else renderMineView();
+  }
+
+  function renderInstructorFilter() {
+    var regionOptions = state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
+    document.getElementById('instructor-filter').innerHTML =
+      '<div class="date-nav">' +
+        '<button class="btn-nav" id="inst-prev">‹</button>' +
+        '<span class="date-display" id="inst-date-display">' + formatDateKo(state.currentDate) + '</span>' +
+        '<button class="btn-nav" id="inst-next">›</button>' +
+      '</div>' +
+      '<select class="filter-select" id="inst-region-select">' +
+        '<option value="">전체 지역</option>' + regionOptions +
+      '</select>';
+    document.getElementById('inst-prev').onclick = function(){ changeDate(-1); };
+    document.getElementById('inst-next').onclick = function(){ changeDate(1); };
+    document.getElementById('inst-region-select').onchange = function(e){ state.region = e.target.value; loadSlots(); };
+  }
+
+  function changeDate(delta) {
+    state.currentDate = addDays(state.currentDate, delta);
+    document.getElementById('inst-date-display').textContent = formatDateKo(state.currentDate);
+    loadSlots();
+  }
+
+  function loadSlots() {
+    showLoading('시간표 불러오는 중...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) { state.slotStatus = res.slots; renderTimeGrid(); }
+        else showToast((res && res.message) || '오류가 발생했습니다.', 'error');
+      })
+      .withFailureHandler(function(err) { hideLoading(); showToast('서버 오류: ' + (err && err.message ? err.message : '알 수 없는 오류'), 'error'); })
+      .getSlotStatus(state.currentDate, state.region || '');
+  }
+
+  function renderTimeGrid() {
+    document.getElementById('time-grid-body').innerHTML = HOURS.map(function(h) {
+      var slot = state.slotStatus[h] || { booked: false };
+      var cls = slot.booked ? 'slot-booked' : 'slot-available';
+      var text = slot.booked ? (slot.name + ' 강사 예약됨') : '등록 가능';
+      var tag = slot.booked ? '<span class="slot-booked-tag">예약중</span>' : '';
+      return '<div class="time-slot-row ' + cls + '">' +
+        '<div class="time-label">' + h + '</div>' +
+        '<div class="time-cell"><div class="slot-indicator"></div><span class="slot-text">' + text + '</span>' + tag + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function renderMineView() {
+    var container = document.getElementById('mine-view');
+    var stored = JSON.parse(localStorage.getItem('myRegs') || '[]');
+    if (!stored.length) {
+      container.innerHTML = '<div class="schedule-empty"><div class="empty-icon">📭</div><p>등록된 강의가 없습니다</p><small>+ 버튼을 눌러 강의 시간을 등록하세요</small></div>';
+      return;
+    }
+    container.innerHTML =
+      '<div class="section-title"><span class="dot"></span>내 등록 강의 (' + stored.length + '건)</div>' +
+      stored.map(function(r) {
+        return '<div class="my-reg-card">' +
+          '<div class="reg-info">' +
+            '<div class="reg-time">📅 ' + r.date + ' ' + r.startTime + '~' + r.endTime + '</div>' +
+            '<div class="reg-meta">' + r.name + ' · ' + r.region + '</div>' +
+          '</div>' +
+          '<button class="btn-cancel" onclick="App.cancelReg(\'' + r.id + '\',\'' + r.phone + '\')">취소</button>' +
+          '</div>';
+      }).join('');
+  }
+
+  // ---- REGISTER MODAL ----
+  function openRegisterModal() {
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-phone').value = '';
+    document.getElementById('reg-region').value = state.region || '';
+    document.getElementById('reg-date').value = state.currentDate;
+    document.getElementById('reg-date').min = todayStr();
+    state.selectedSlots = [];
+    renderTimeChips(state.currentDate, state.region || '');
+    document.getElementById('overlay-modal').classList.add('active');
+    document.getElementById('reg-name').focus();
+
+    document.getElementById('reg-date').onchange = function(e) {
+      renderTimeChips(e.target.value, document.getElementById('reg-region').value);
+    };
+    document.getElementById('reg-region').onchange = function(e) {
+      renderTimeChips(document.getElementById('reg-date').value, e.target.value);
+    };
+  }
+
+  function closeRegisterModal() {
+    document.getElementById('overlay-modal').classList.remove('active');
+    state.selectedSlots = [];
+  }
+
+  function renderTimeChips(date, region) {
+    if (!date) return;
+    showLoading('시간 정보 확인 중...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (!res || !res.success) return;
+        var slots = res.slots;
+        state.selectedSlots = [];
+        updateSelectedTimeDisplay();
+        document.getElementById('time-chips-wrap').innerHTML = HOURS.map(function(h) {
+          var slot = slots[h] || { booked: false };
+          var cls = slot.booked ? 'chip-booked' : '';
+          var label = slot.booked ? h + ' 예약됨' : h;
+          var disabled = slot.booked ? 'disabled' : '';
+          return '<button class="time-chip ' + cls + '" data-hour="' + h + '" onclick="App.toggleChip(this,\'' + h + '\')" ' + disabled + '>' + label + '</button>';
+        }).join('');
+      })
+      .withFailureHandler(function(){ hideLoading(); })
+      .getSlotStatus(date, region || '');
+  }
+
+  function toggleChip(el, hour) {
+    if (el.classList.contains('chip-booked')) return;
+    el.classList.toggle('chip-selected');
+    var idx = state.selectedSlots.indexOf(hour);
+    if (idx > -1) state.selectedSlots.splice(idx, 1);
+    else state.selectedSlots.push(hour);
+    state.selectedSlots.sort();
+    updateSelectedTimeDisplay();
+  }
+
+  function updateSelectedTimeDisplay() {
+    var el = document.getElementById('selected-time-display');
+    if (!state.selectedSlots.length) {
+      el.textContent = '시간을 선택해주세요';
+      el.style.color = 'var(--gray-400)';
+      return;
+    }
+    var hours = state.selectedSlots.map(function(s){ return parseInt(s); });
+    var continuous = true;
+    for (var i = 1; i < hours.length; i++) {
+      if (hours[i] !== hours[i-1] + 1) { continuous = false; break; }
+    }
+    if (!continuous) {
+      el.textContent = '연속된 시간만 선택 가능합니다';
+      el.style.color = 'var(--danger)';
+    } else {
+      var start = state.selectedSlots[0];
+      var endH = parseInt(state.selectedSlots[state.selectedSlots.length - 1]) + 1;
+      var end = String(endH).padStart(2,'0') + ':00';
+      el.textContent = start + ' ~ ' + end + ' (' + state.selectedSlots.length + '시간)';
+      el.style.color = 'var(--primary)';
+    }
+  }
+
+  function submitRegister() {
+    var name = document.getElementById('reg-name').value.trim();
+    var phone = document.getElementById('reg-phone').value.trim();
+    var region = document.getElementById('reg-region').value;
+    var date = document.getElementById('reg-date').value;
+
+    if (!name || !phone || !region || !date || !state.selectedSlots.length) {
+      showToast('모든 항목을 입력하고 시간을 선택해주세요.', 'warning'); return;
+    }
+    var hours = state.selectedSlots.map(function(s){ return parseInt(s); });
+    var continuous = true;
+    for (var i = 1; i < hours.length; i++) {
+      if (hours[i] !== hours[i-1] + 1) { continuous = false; break; }
+    }
+    if (!continuous) { showToast('연속된 시간대만 선택 가능합니다.', 'warning'); return; }
+
+    var startTime = state.selectedSlots[0];
+    var endHour = parseInt(state.selectedSlots[state.selectedSlots.length - 1]) + 1;
+    var endTime = String(endHour).padStart(2,'0') + ':00';
+
+    closeRegisterModal();
+    showLoading('등록 중...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          showToast(res.message, 'success');
+          var regs = JSON.parse(localStorage.getItem('myRegs') || '[]');
+          regs.push({ id: 'local-' + Date.now(), name: name, phone: phone, region: region, date: date, startTime: startTime, endTime: endTime });
+          localStorage.setItem('myRegs', JSON.stringify(regs));
+          loadSlots();
+        } else {
+          showToast((res && res.message) || '등록 중 오류가 발생했습니다.', 'error');
+          document.getElementById('overlay-modal').classList.add('active');
+        }
+      })
+      .withFailureHandler(function() {
+        hideLoading();
+        showToast('등록 중 오류가 발생했습니다.', 'error');
+        document.getElementById('overlay-modal').classList.add('active');
+      })
+      .registerTime({ name: name, phone: phone, region: region, date: date, startTime: startTime, endTime: endTime });
+  }
+
+  function cancelReg(id, phone) {
+    var ph = prompt('등록 취소를 위해 휴대폰 번호를 입력해주세요:');
+    if (!ph) return;
+    showLoading('취소 처리 중...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          showToast(res.message, 'success');
+          var regs = JSON.parse(localStorage.getItem('myRegs') || '[]').filter(function(r){ return r.id !== id; });
+          localStorage.setItem('myRegs', JSON.stringify(regs));
+          renderMineView();
+        } else { showToast((res && res.message) || '취소 중 오류가 발생했습니다.', 'error'); }
+      })
+      .withFailureHandler(function(){ hideLoading(); showToast('취소 중 오류가 발생했습니다.', 'error'); })
+      .deleteRegistration(id, ph);
+  }
+
+  // ---- TEACHER ----
+  function initTeacher() {
+    document.getElementById('teacher-back').onclick = function(){ showPage('page-landing'); };
+    state.weekOffset = 0;
+    document.getElementById('week-prev').onclick = function(){ state.weekOffset--; renderWeekStrip(); };
+    document.getElementById('week-next').onclick = function(){ state.weekOffset++; renderWeekStrip(); };
+    document.getElementById('teacher-region-select').onchange = function(e){ state.region = e.target.value; loadSchedule(); };
+    renderTeacherRegions();
+    renderWeekStrip();
+    loadSchedule();
+  }
+
+  function renderTeacherRegions() {
+    var sel = document.getElementById('teacher-region-select');
+    sel.innerHTML = '<option value="">전체 지역</option>' +
+      state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
+  }
+
+  function renderWeekStrip() {
+    var dates = getWeekDates(state.weekOffset);
+    var today = todayStr();
+    var dayNames = ['월','화','수','목','금','토','일'];
+    document.getElementById('week-strip').innerHTML = dates.map(function(d, i) {
+      var dd = parseInt(d.split('-')[2]);
+      var isToday = d === today;
+      var isSelected = d === state.currentDate;
+      var cls = (isToday ? 'today ' : '') + (isSelected ? 'selected' : '');
+      return '<div class="day-pill ' + cls + '" onclick="App.selectDay(\'' + d + '\')">' +
+        '<span class="day-name">' + dayNames[i] + '</span>' +
+        '<span class="day-num">' + dd + '</span>' +
+        '</div>';
+    }).join('');
+
+    var first = dates[0].split('-'), last = dates[6].split('-');
+    document.getElementById('week-range').textContent = parseInt(first[1]) + '월 ' + parseInt(first[2]) + '일 ~ ' + parseInt(last[1]) + '월 ' + parseInt(last[2]) + '일';
+  }
+
+  function selectDay(date) {
+    state.currentDate = date;
+    renderWeekStrip();
+    loadSchedule();
+  }
+
+  function loadSchedule() {
+    document.getElementById('schedule-date-label').textContent = formatDateKo(state.currentDate);
+    showLoading('강사 시간표 불러오는 중...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        state.scheduleList = Array.isArray(res) ? res : [];
+        renderScheduleCards();
+      })
+      .withFailureHandler(function(){ hideLoading(); showToast('시간표를 불러오지 못했습니다.', 'error'); })
+      .getRegisteredTimes({ date: state.currentDate, region: state.region || undefined });
+  }
+
+  function renderScheduleCards() {
+    var container = document.getElementById('schedule-cards');
+    if (!state.scheduleList.length) {
+      container.innerHTML = '<div class="schedule-empty"><div class="empty-icon">📋</div><p>등록된 강사 일정이 없습니다</p><small>' + formatDateKo(state.currentDate) + '에는 아직 등록된 강의가 없어요</small></div>';
+      return;
+    }
+    container.innerHTML = state.scheduleList.map(function(r) {
+      return '<div class="schedule-card">' +
+        '<div class="scard-icon">👩‍🏫</div>' +
+        '<div class="scard-body">' +
+          '<div class="scard-name">' + r['이름'] + ' 강사</div>' +
+          '<div class="scard-time">🕐 ' + r['시작시간'] + ' ~ ' + r['종료시간'] + '</div>' +
+          '<div class="scard-meta">' +
+            '<span class="scard-region-tag">📍 ' + r['지역'] + '</span>' +
+          '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ---- INIT ----
+  function init() {
+    // 버전 로드
+    google.script.run
+      .withSuccessHandler(function(ver) {
+        var el = document.getElementById('app-version');
+        if (el) el.textContent = ver || '';
+      })
+      .getVersion();
+
+    // 지역 목록 로드
+    google.script.run
+      .withSuccessHandler(function(regions) {
+        state.regions = regions || [];
+        var opts = '<option value="">지역 선택</option>' + state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
+        document.getElementById('reg-region').innerHTML = opts;
+      })
+      .getRegions();
+
+    initLanding();
+  }
+
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay };
+})();
+
+window.addEventListener('load', function(){ App.init(); });
+</script>
+</body>
+</html>
