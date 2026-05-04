@@ -505,6 +505,58 @@
     .yr-mini-d.hd { color: var(--gray-300); font-weight: 600; font-size: 6px; }
     .yr-mini-d.today-d { background: var(--primary); color: #fff; border-radius: 50%; }
     .yr-mini-d.other { opacity: 0.2; }
+
+    /* ===================== INSTRUCTOR STEP FLOW ===================== */
+    .region-step { padding: 28px 20px 40px; }
+    .region-step-title { font-size: 22px; font-weight: 900; color: var(--gray-900); margin-bottom: 6px; letter-spacing: -0.5px; }
+    .region-step-sub { font-size: 13px; color: var(--gray-400); margin-bottom: 28px; line-height: 1.6; }
+    .region-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 480px) { .region-grid { grid-template-columns: repeat(2, 1fr); } }
+    .region-card {
+      background: #fff; border: 2px solid var(--gray-100);
+      border-radius: 18px; padding: 24px 12px 20px;
+      text-align: center; cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .region-card:hover { transform: translateY(-6px); border-color: var(--primary); box-shadow: 0 12px 36px rgba(255,39,120,0.16); }
+    .region-card.r-all { border-style: dashed; border-color: var(--gray-200); }
+    .region-card.r-all:hover { border-color: var(--gray-500); box-shadow: 0 10px 28px rgba(0,0,0,0.1); transform: translateY(-4px); }
+    .region-icon { font-size: 32px; display: block; margin-bottom: 10px; }
+    .region-name { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+
+    .date-step { padding: 20px; }
+    .step-back-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .btn-step-back {
+      width: 40px; height: 40px; border-radius: 12px;
+      border: 1.5px solid var(--gray-200); background: #fff;
+      cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center;
+      color: var(--gray-600); transition: all 0.2s; flex-shrink: 0;
+    }
+    .btn-step-back:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+    .step-back-label { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+    .step-back-label em { color: var(--primary); font-style: normal; }
+    .cal-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .cal-month-label { font-size: 20px; font-weight: 800; color: var(--gray-900); }
+    .m-day.past-day { opacity: 0.28; pointer-events: none; }
+
+    .time-step-hdr {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 20px; background: var(--primary-bg);
+      border-bottom: 2px solid rgba(255,39,120,0.15);
+    }
+    .time-step-info { flex: 1; }
+    .time-step-region-tag { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+    .time-step-date-label { font-size: 18px; font-weight: 900; color: var(--gray-900); letter-spacing: -0.5px; }
+    .time-step-body { padding: 20px; }
+    .btn-reg-big {
+      width: 100%; padding: 18px; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius); font-size: 16px; font-weight: 800;
+      cursor: pointer; margin-top: 20px; font-family: inherit;
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: var(--shadow-primary); letter-spacing: -0.3px;
+    }
+    .btn-reg-big:hover { background: var(--primary-dark); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(255,39,120,0.4); }
   </style>
 </head>
 <body>
@@ -599,29 +651,14 @@
     </div>
     <span class="header-badge badge-instructor">투닝 전문 강사</span>
   </header>
-  <div class="filter-bar" id="instructor-filter"></div>
-  <div class="content-area">
-    <div class="tab-bar">
-      <button class="tab-btn active" id="inst-tab-grid">📅 시간표 보기</button>
+  <div class="content-area" style="padding:0;display:flex;flex-direction:column;">
+    <div class="tab-bar" style="margin:16px 16px 0;flex-shrink:0;">
+      <button class="tab-btn active" id="inst-tab-grid">📅 시간 등록</button>
       <button class="tab-btn" id="inst-tab-mine">📋 내 등록 목록</button>
     </div>
-    <div id="grid-view">
-      <div id="inst-day-view">
-        <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>등록 가능</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>이미 예약됨</span></div>
-        </div>
-        <div class="section-title"><span class="dot"></span>강의 시간 현황</div>
-        <div class="time-grid-wrap">
-          <div class="time-grid-header"><span>시간</span><span>상태</span></div>
-          <div id="time-grid-body"></div>
-        </div>
-      </div>
-      <div id="inst-cal-view" style="display:none"></div>
-    </div>
-    <div id="mine-view" style="display:none"></div>
+    <div id="grid-view" style="flex:1;overflow-y:auto;"></div>
+    <div id="mine-view" style="display:none;padding:20px;overflow-y:auto;flex:1;"></div>
   </div>
-  <button class="fab" id="fab-register" aria-label="강의 시간 등록">＋</button>
 </div>
 
 <!-- ============ PAGE: TEACHER ============ -->
@@ -683,9 +720,9 @@ const App = (() => {
     viewType: 'week',
     monthOffset: 0,
     yearOffset: 0,
-    instViewType: 'day',
-    instWeekOffset: 0,
-    instMonthOffset: 0,
+    instStep: 1,
+    instSelectedRegion: '',
+    instCalMonthOffset: 0,
   };
 
   function todayStr() {
@@ -759,14 +796,18 @@ const App = (() => {
     else { showPage('page-teacher'); initTeacher(); }
   }
 
-  // ---- INSTRUCTOR ----
+  // ---- INSTRUCTOR STEP FLOW ----
+  var REGION_ICONS = {
+    '서울':'🏙️','경기':'🌆','인천':'🚢','강원':'🏔️','충북':'🌲','충남':'🌻',
+    '대전':'🔬','경북':'🏯','경남':'🐬','부산':'🎡','대구':'🌸','울산':'⚙️',
+    '전북':'🌾','전남':'🍃','광주':'🎭','제주':'🌺','세종':'🏛️'
+  };
+
   function initInstructor() {
     document.getElementById('instructor-back').onclick = function(){ showPage('page-landing'); };
-    document.getElementById('fab-register').onclick = openRegisterModal;
     document.getElementById('inst-tab-grid').onclick = function(){ switchTab('grid'); };
     document.getElementById('inst-tab-mine').onclick = function(){ switchTab('mine'); };
-    renderInstructorFilter();
-    renderInstCurrentView();
+    switchTab('grid');
   }
 
   function switchTab(tab) {
@@ -775,174 +816,148 @@ const App = (() => {
     document.getElementById('inst-tab-mine').classList.toggle('active', tab === 'mine');
     document.getElementById('grid-view').style.display = tab === 'grid' ? '' : 'none';
     document.getElementById('mine-view').style.display = tab === 'mine' ? '' : 'none';
-    if (tab === 'grid') renderInstCurrentView();
+    if (tab === 'grid') renderInstStep1();
     else renderMineView();
   }
 
-  function renderInstructorFilter() {
-    var regionOptions = state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
-    var ivLabels = { day:'일', week:'주', month:'월' };
-    var v = state.instViewType;
-    document.getElementById('instructor-filter').innerHTML =
-      '<div style="display:flex;align-items:center;gap:8px;flex:1;">' +
-        '<button class="btn-nav" id="inst-prev">‹</button>' +
-        '<span style="font-size:14px;font-weight:600;color:var(--gray-700);white-space:nowrap;" id="inst-date-display"></span>' +
-        '<button class="btn-nav" id="inst-next">›</button>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<div class="view-type-wrap" id="inst-vt-wrap">' +
-          '<button class="view-type-btn" id="inst-vt-btn"><span id="inst-vt-label">' + (ivLabels[v]||'일') + '</span> ▾</button>' +
-          '<div class="view-type-dropdown" id="inst-vt-drop">' +
-            '<div class="vt-item' + (v==='day'?' active':'') + '" data-iview="day">일 <span class="vt-key">D</span></div>' +
-            '<div class="vt-item' + (v==='week'?' active':'') + '" data-iview="week">주 <span class="vt-key">W</span></div>' +
-            '<div class="vt-item' + (v==='month'?' active':'') + '" data-iview="month">월 <span class="vt-key">M</span></div>' +
-          '</div>' +
+  // Step 1: 지역 선택
+  function renderInstStep1() {
+    state.instStep = 1;
+    var gv = document.getElementById('grid-view');
+    var cards = state.regions.map(function(r) {
+      return '<div class="region-card" onclick="App.selectInstRegion(\'' + r + '\')">' +
+        '<span class="region-icon">' + (REGION_ICONS[r] || '📍') + '</span>' +
+        '<div class="region-name">' + r + '</div>' +
+        '</div>';
+    }).join('');
+    gv.innerHTML =
+      '<div class="region-step">' +
+      '<div class="region-step-title">어느 지역에서<br>강의하시나요?</div>' +
+      '<div class="region-step-sub">지역을 선택하면 해당 지역 시간 현황을 확인하고<br>바로 등록할 수 있어요</div>' +
+      '<div class="region-grid">' +
+        '<div class="region-card r-all" onclick="App.selectInstRegion(\'\')">' +
+          '<span class="region-icon">🗺️</span>' +
+          '<div class="region-name">전체 지역</div>' +
         '</div>' +
-        '<select class="filter-select" id="inst-region-select">' +
-          '<option value="">전체 지역</option>' + regionOptions +
-        '</select>' +
+        cards +
+      '</div>' +
       '</div>';
-    updateInstNavLabel();
-    document.getElementById('inst-prev').onclick = function(){ navigateInstView(-1); };
-    document.getElementById('inst-next').onclick = function(){ navigateInstView(1); };
-    document.getElementById('inst-region-select').onchange = function(e){
-      state.region = e.target.value;
-      scheduleCache = {};
-      renderInstCurrentView();
-    };
-    var vtBtn = document.getElementById('inst-vt-btn');
-    var vtDrop = document.getElementById('inst-vt-drop');
-    vtBtn.onclick = function(e){ e.stopPropagation(); vtDrop.classList.toggle('open'); };
-    document.addEventListener('click', function(){ vtDrop && vtDrop.classList.remove('open'); });
-    document.querySelectorAll('[data-iview]').forEach(function(el){
-      el.onclick = function(){ setInstViewType(el.dataset.iview); };
-    });
   }
 
-  function setInstViewType(type) {
-    state.instViewType = type;
-    var labels = { day:'일', week:'주', month:'월' };
-    var lbl = document.getElementById('inst-vt-label');
-    var drop = document.getElementById('inst-vt-drop');
-    if (lbl) lbl.textContent = labels[type] || type;
-    if (drop) drop.classList.remove('open');
-    document.querySelectorAll('[data-iview]').forEach(function(el){
-      el.classList.toggle('active', el.dataset.iview === type);
-    });
-    renderInstCurrentView();
+  function selectInstRegion(region) {
+    state.instSelectedRegion = region;
+    state.region = region;
+    scheduleCache = {};
+    renderInstStep2();
   }
 
-  function navigateInstView(dir) {
-    var v = state.instViewType;
-    if (v === 'day') state.currentDate = addDays(state.currentDate, dir);
-    else if (v === 'week') state.instWeekOffset += dir;
-    else if (v === 'month') state.instMonthOffset += dir;
-    renderInstCurrentView();
+  // Step 2: 날짜 선택 (달력)
+  function renderInstStep2() {
+    state.instStep = 2;
+    var regionLabel = state.instSelectedRegion || '전체 지역';
+    var gv = document.getElementById('grid-view');
+    gv.innerHTML =
+      '<div class="date-step">' +
+      '<div class="step-back-row">' +
+        '<button class="btn-step-back" onclick="App.goInstStep(1)">‹</button>' +
+        '<div class="step-back-label">📍 <em>' + regionLabel + '</em> · 날짜 선택</div>' +
+      '</div>' +
+      '<div class="cal-nav-row">' +
+        '<button class="btn-nav" id="inst-cal-prev">‹</button>' +
+        '<span class="cal-month-label" id="inst-cal-label"></span>' +
+        '<button class="btn-nav" id="inst-cal-next">›</button>' +
+      '</div>' +
+      '<div class="month-dow-row"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>' +
+      '<div id="inst-cal-grid" class="month-grid"></div>' +
+      '<p style="text-align:center;color:var(--gray-400);font-size:12px;margin-top:16px;">날짜를 클릭하면 시간 현황으로 이동해요</p>' +
+      '</div>';
+    document.getElementById('inst-cal-prev').onclick = function(){ state.instCalMonthOffset--; refreshInstCalGrid(); };
+    document.getElementById('inst-cal-next').onclick = function(){ state.instCalMonthOffset++; refreshInstCalGrid(); };
+    refreshInstCalGrid();
   }
 
-  function getInstMonthYear() {
+  function getInstCalMonthYear() {
     var today = new Date();
-    var d = new Date(today.getFullYear(), today.getMonth() + state.instMonthOffset, 1);
+    var d = new Date(today.getFullYear(), today.getMonth() + (state.instCalMonthOffset || 0), 1);
     return { year: d.getFullYear(), month: d.getMonth() };
   }
 
-  function updateInstNavLabel() {
-    var v = state.instViewType;
-    var el = document.getElementById('inst-date-display');
-    if (!el) return;
-    if (v === 'day') {
-      el.textContent = formatDateKo(state.currentDate);
-    } else if (v === 'week') {
-      var dates = getWeekDates(state.instWeekOffset);
-      var f = dates[0].split('-'), l = dates[6].split('-');
-      el.textContent = parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일';
-    } else if (v === 'month') {
-      var my = getInstMonthYear();
-      el.textContent = my.year + '년 ' + (my.month + 1) + '월';
-    }
-  }
-
-  function renderInstCurrentView() {
-    updateInstNavLabel();
-    var v = state.instViewType;
-    var dayView = document.getElementById('inst-day-view');
-    var calView = document.getElementById('inst-cal-view');
-    if (!dayView || !calView) return;
-    if (v === 'day') {
-      dayView.style.display = '';
-      calView.style.display = 'none';
-      loadSlots();
-    } else {
-      dayView.style.display = 'none';
-      calView.style.display = '';
-      calView.innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">불러오는 중...</p></div>';
-      if (v === 'week') renderInstWeekView(calView);
-      else if (v === 'month') renderInstMonthView(calView);
-    }
-  }
-
-  function selectInstDay(date) {
-    state.currentDate = date;
-    setInstViewType('day');
-  }
-
-  function renderInstWeekView(container) {
-    var dates = getWeekDates(state.instWeekOffset);
-    var today = todayStr();
-    var dayNames = ['월','화','수','목','금','토','일'];
-    fetchRange(dates[0], 7).then(function(dataMap) {
-      var html = '<div class="col-view col-view-7">';
-      dates.forEach(function(d, i) {
-        var list = dataMap[d] || [];
-        var hdr = '<div class="col-day-header' + (d === today ? ' is-today' : '') + (d === state.currentDate ? ' is-selected' : '') + '" onclick="App.selectInstDay(\'' + d + '\')">' +
-          '<div class="col-dn">' + dayNames[i] + '</div>' +
-          '<div class="col-dd">' + parseInt(d.split('-')[2]) + '</div>' +
-          '</div>';
-        var body = '<div class="col-day-body">';
-        if (!list.length) { body += '<div class="col-empty">여유</div>'; }
-        else { list.forEach(function(r){ body += '<div class="col-event"><div class="col-event-name">' + r['이름'] + '</div><div class="col-event-time">' + r['시작시간'] + '~' + r['종료시간'] + '</div></div>'; }); }
-        body += '</div>';
-        html += '<div class="col-day">' + hdr + body + '</div>';
-      });
-      html += '</div><p style="text-align:center;color:var(--gray-400);font-size:12px;margin-top:14px">날짜를 클릭하면 시간표로 이동합니다</p>';
-      container.innerHTML = html;
-    }).catch(function(){ container.innerHTML = '<p style="color:red;padding:20px">오류가 발생했습니다.</p>'; });
-  }
-
-  function renderInstMonthView(container) {
-    var my = getInstMonthYear();
+  function refreshInstCalGrid() {
+    var my = getInstCalMonthYear();
     var year = my.year, month = my.month;
+    var lbl = document.getElementById('inst-cal-label');
+    if (lbl) lbl.textContent = year + '년 ' + (month + 1) + '월';
     var firstDay = new Date(year, month, 1);
     var startDow = (firstDay.getDay() + 6) % 7;
     var totalDays = new Date(year, month + 1, 0).getDate();
     var today = todayStr();
-    var gridStart = new Date(firstDay);
-    gridStart.setDate(gridStart.getDate() - startDow);
-    var gsStr = gridStart.getFullYear() + '-' + String(gridStart.getMonth()+1).padStart(2,'0') + '-' + String(gridStart.getDate()).padStart(2,'0');
+    var gs = new Date(firstDay);
+    gs.setDate(gs.getDate() - startDow);
+    var gsStr = gs.getFullYear() + '-' + String(gs.getMonth()+1).padStart(2,'0') + '-' + String(gs.getDate()).padStart(2,'0');
     var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
+    var grid = document.getElementById('inst-cal-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;font-size:12px;color:#aaa;">불러오는 중...</div>';
     fetchRange(gsStr, gridDays).then(function(dataMap) {
-      var dow = ['월','화','수','목','금','토','일'];
-      var html = '<div class="month-view"><div class="month-dow-row">';
-      dow.forEach(function(d){ html += '<span>' + d + '</span>'; });
-      html += '</div><div class="month-grid">';
+      var html = '';
       for (var i = 0; i < gridDays; i++) {
         var d = addDays(gsStr, i);
         var dp = d.split('-');
         var isOther = parseInt(dp[1]) - 1 !== month;
         var isToday = d === today;
+        var isPast = d < today;
         var isSel = d === state.currentDate;
         var list = dataMap[d] || [];
         var dots = Math.min(list.length, 3);
-        var cls = 'm-day' + (isOther ? ' other-mo' : '') + (isToday ? ' is-today' : '') + (isSel ? ' is-selected' : '');
-        html += '<div class="' + cls + '" onclick="App.selectInstDay(\'' + d + '\')">';
+        var cls = 'm-day' + (isOther ? ' other-mo' : '') + (isToday ? ' is-today' : '') + (isSel ? ' is-selected' : '') + (isPast && !isToday ? ' past-day' : '');
+        html += '<div class="' + cls + '" onclick="App.selectInstDate(\'' + d + '\')">';
         html += '<div class="m-num-wrap"><span class="m-num">' + parseInt(dp[2]) + '</span></div>';
         if (dots > 0) { html += '<div class="m-dots">'; for (var j = 0; j < dots; j++) html += '<div class="m-dot"></div>'; html += '</div>'; }
         html += '</div>';
       }
-      html += '</div></div><p style="text-align:center;color:var(--gray-400);font-size:12px;margin-top:14px">날짜를 클릭하면 시간표로 이동합니다</p>';
-      container.innerHTML = html;
-    }).catch(function(){ container.innerHTML = '<p style="color:red;padding:20px">오류가 발생했습니다.</p>'; });
+      if (grid) grid.innerHTML = html;
+    });
   }
+
+  function selectInstDate(date) {
+    state.currentDate = date;
+    renderInstStep3();
+  }
+
+  // Step 3: 시간 현황 + 등록
+  function renderInstStep3() {
+    state.instStep = 3;
+    var regionLabel = state.instSelectedRegion || '전체 지역';
+    var gv = document.getElementById('grid-view');
+    gv.innerHTML =
+      '<div class="time-step-hdr">' +
+        '<button class="btn-step-back" onclick="App.goInstStep(2)">‹</button>' +
+        '<div class="time-step-info">' +
+          '<div class="time-step-region-tag">📍 ' + regionLabel + '</div>' +
+          '<div class="time-step-date-label">' + formatDateKo(state.currentDate) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="time-step-body">' +
+        '<div class="legend">' +
+          '<div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>등록 가능</span></div>' +
+          '<div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>이미 예약됨</span></div>' +
+        '</div>' +
+        '<div class="time-grid-wrap">' +
+          '<div class="time-grid-header"><span>시간</span><span>상태</span></div>' +
+          '<div id="time-grid-body"><div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div></div>' +
+        '</div>' +
+        '<button class="btn-reg-big" onclick="App.openRegModal()">＋ 강의 시간 등록하기</button>' +
+      '</div>';
+    loadSlots();
+  }
+
+  function goInstStep(step) {
+    if (step === 1) renderInstStep1();
+    else if (step === 2) renderInstStep2();
+    else if (step === 3) renderInstStep3();
+  }
+
+  function openRegModal() { openRegisterModal(); }
 
   function loadSlots() {
     document.getElementById('time-grid-body').innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div>';
@@ -1489,7 +1504,7 @@ const App = (() => {
     initLanding();
   }
 
-  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, selectInstDay: selectInstDay };
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, selectInstRegion: selectInstRegion, selectInstDate: selectInstDate, goInstStep: goInstStep, openRegModal: openRegModal };
 })();
 
 window.addEventListener('load', function(){ App.init(); });
