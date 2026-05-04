@@ -506,6 +506,34 @@
     .yr-mini-d.today-d { background: var(--primary); color: #fff; border-radius: 50%; }
     .yr-mini-d.other { opacity: 0.2; }
 
+    /* ===================== INSTRUCTOR HOME CARDS ===================== */
+    .inst-home { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .sel-card { background: #fff; border-radius: 18px; border: 1.5px solid var(--gray-100); box-shadow: 0 2px 12px rgba(0,0,0,0.05); overflow: visible; }
+    .sel-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--gray-100);
+    }
+    .sel-card-title-wrap { display: flex; align-items: center; gap: 10px; }
+    .sel-card-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      font-size: 12px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sel-card-label { font-size: 15px; font-weight: 700; color: var(--gray-800); }
+    .sel-card-body { padding: 16px 20px; }
+    .sel-card-select {
+      width: 100%; padding: 14px 40px 14px 16px;
+      border: 1.5px solid var(--gray-200); border-radius: 12px;
+      font-size: 15px; font-family: inherit; color: var(--gray-700);
+      background: var(--gray-50); cursor: pointer; outline: none; transition: all 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+    }
+    .sel-card-select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(255,39,120,0.1); }
+    .sel-card-select.chosen { border-color: var(--primary); color: var(--primary); font-weight: 700; background-color: var(--primary-bg); }
+
     /* ===================== INSTRUCTOR STEP FLOW ===================== */
     .region-step { padding: 28px 20px 40px; }
     .region-step-title { font-size: 22px; font-weight: 900; color: var(--gray-900); margin-bottom: 6px; letter-spacing: -0.5px; }
@@ -720,9 +748,9 @@ const App = (() => {
     viewType: 'week',
     monthOffset: 0,
     yearOffset: 0,
-    instStep: 1,
-    instSelectedRegion: '',
+    instCalView: 'month',
     instCalMonthOffset: 0,
+    instWeekOff: 0,
   };
 
   function todayStr() {
@@ -796,13 +824,7 @@ const App = (() => {
     else { showPage('page-teacher'); initTeacher(); }
   }
 
-  // ---- INSTRUCTOR STEP FLOW ----
-  var REGION_ICONS = {
-    '서울':'🏙️','경기':'🌆','인천':'🚢','강원':'🏔️','충북':'🌲','충남':'🌻',
-    '대전':'🔬','경북':'🏯','경남':'🐬','부산':'🎡','대구':'🌸','울산':'⚙️',
-    '전북':'🌾','전남':'🍃','광주':'🎭','제주':'🌺','세종':'🏛️'
-  };
-
+  // ---- INSTRUCTOR HOME (두 카드) ----
   function initInstructor() {
     document.getElementById('instructor-back').onclick = function(){ showPage('page-landing'); };
     document.getElementById('inst-tab-grid').onclick = function(){ switchTab('grid'); };
@@ -816,85 +838,206 @@ const App = (() => {
     document.getElementById('inst-tab-mine').classList.toggle('active', tab === 'mine');
     document.getElementById('grid-view').style.display = tab === 'grid' ? '' : 'none';
     document.getElementById('mine-view').style.display = tab === 'mine' ? '' : 'none';
-    if (tab === 'grid') renderInstStep1();
+    if (tab === 'grid') renderInstHome();
     else renderMineView();
   }
 
-  // Step 1: 지역 선택
-  function renderInstStep1() {
-    state.instStep = 1;
+  function renderInstHome() {
     var gv = document.getElementById('grid-view');
-    var cards = state.regions.map(function(r) {
-      return '<div class="region-card" onclick="App.selectInstRegion(\'' + r + '\')">' +
-        '<span class="region-icon">' + (REGION_ICONS[r] || '📍') + '</span>' +
-        '<div class="region-name">' + r + '</div>' +
-        '</div>';
-    }).join('');
-    gv.innerHTML =
-      '<div class="region-step">' +
-      '<div class="region-step-title">어느 지역에서<br>강의하시나요?</div>' +
-      '<div class="region-step-sub">지역을 선택하면 해당 지역 시간 현황을 확인하고<br>바로 등록할 수 있어요</div>' +
-      '<div class="region-grid">' +
-        '<div class="region-card r-all" onclick="App.selectInstRegion(\'\')">' +
-          '<span class="region-icon">🗺️</span>' +
-          '<div class="region-name">전체 지역</div>' +
-        '</div>' +
-        cards +
-      '</div>' +
-      '</div>';
-  }
+    var calView = state.instCalView || 'month';
+    var cvLabels = { month:'월별', week:'주별', day:'일별' };
+    var regionOptions = '<option value="">전체 지역</option>' +
+      state.regions.map(function(r){
+        return '<option value="' + r + '"' + (state.region === r ? ' selected' : '') + '>' + r + '</option>';
+      }).join('');
 
-  function selectInstRegion(region) {
-    state.instSelectedRegion = region;
-    state.region = region;
-    state.currentDate = todayStr();
-    scheduleCache = {};
-    renderInstStep2();
-  }
-
-  // Step 2: 시간 현황 + 날짜 이동 + 등록
-  function renderInstStep2() {
-    state.instStep = 2;
-    var regionLabel = state.instSelectedRegion || '전체 지역';
-    var gv = document.getElementById('grid-view');
     gv.innerHTML =
-      '<div class="time-step-hdr">' +
-        '<button class="btn-step-back" onclick="App.goInstStep(1)">‹</button>' +
-        '<div class="time-step-info">' +
-          '<div class="time-step-region-tag">📍 ' + regionLabel + '</div>' +
-          '<div class="time-step-date-label" id="inst-date-title">' + formatDateKo(state.currentDate) + '</div>' +
+      '<div class="inst-home">' +
+      // ① 지역 카드
+      '<div class="sel-card">' +
+        '<div class="sel-card-header">' +
+          '<div class="sel-card-title-wrap"><span class="sel-card-num">1</span><span class="sel-card-label">지역을 선택하세요</span></div>' +
         '</div>' +
-        '<div style="display:flex;align-items:center;gap:6px;">' +
-          '<button class="btn-nav" id="inst-day-prev">‹</button>' +
-          '<button class="btn-nav" id="inst-day-next">›</button>' +
+        '<div class="sel-card-body">' +
+          '<select class="sel-card-select' + (state.region ? ' chosen' : '') + '" id="inst-region-sel">' + regionOptions + '</select>' +
         '</div>' +
       '</div>' +
-      '<div class="time-step-body">' +
-        '<div class="legend">' +
-          '<div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>등록 가능</span></div>' +
-          '<div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>이미 예약됨</span></div>' +
+      // ② 일정 카드
+      '<div class="sel-card">' +
+        '<div class="sel-card-header">' +
+          '<div class="sel-card-title-wrap"><span class="sel-card-num">2</span><span class="sel-card-label">일정을 선택하세요</span></div>' +
+          '<div class="view-type-wrap" id="inst-cv-wrap">' +
+            '<button class="view-type-btn" id="inst-cv-btn"><span id="inst-cv-label">' + cvLabels[calView] + '</span> ▾</button>' +
+            '<div class="view-type-dropdown" id="inst-cv-drop">' +
+              '<div class="vt-item' + (calView==='month'?' active':'') + '" data-cv="month">월별</div>' +
+              '<div class="vt-item' + (calView==='week'?' active':'') + '" data-cv="week">주별</div>' +
+              '<div class="vt-item' + (calView==='day'?' active':'') + '" data-cv="day">일별</div>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
-        '<div class="time-grid-wrap">' +
-          '<div class="time-grid-header"><span>시간</span><span>상태</span></div>' +
-          '<div id="time-grid-body"></div>' +
-        '</div>' +
-        '<button class="btn-reg-big" onclick="App.openRegModal()">＋ 강의 시간 등록하기</button>' +
+        '<div class="sel-card-body" id="inst-cal-body" style="padding:16px 12px 12px;"></div>' +
+      '</div>' +
+      // 등록 버튼
+      '<button class="btn-reg-big" id="inst-reg-btn">＋ 강의 시간 등록하기</button>' +
       '</div>';
-    document.getElementById('inst-day-prev').onclick = function(){ instChangeDate(-1); };
-    document.getElementById('inst-day-next').onclick = function(){ instChangeDate(1); };
+
+    // 지역 select 이벤트
+    document.getElementById('inst-region-sel').onchange = function(e){
+      state.region = e.target.value;
+      scheduleCache = {};
+      e.target.classList.toggle('chosen', !!state.region);
+      renderInstCalBody();
+    };
+
+    // 뷰 타입 드롭다운
+    var cvBtn = document.getElementById('inst-cv-btn');
+    var cvDrop = document.getElementById('inst-cv-drop');
+    cvBtn.onclick = function(e){ e.stopPropagation(); cvDrop.classList.toggle('open'); };
+    document.addEventListener('click', function(){ if(cvDrop) cvDrop.classList.remove('open'); });
+    document.querySelectorAll('[data-cv]').forEach(function(el){
+      el.onclick = function(){
+        state.instCalView = el.dataset.cv;
+        document.querySelectorAll('[data-cv]').forEach(function(x){ x.classList.toggle('active', x.dataset.cv === state.instCalView); });
+        var lbl = document.getElementById('inst-cv-label');
+        if(lbl) lbl.textContent = cvLabels[state.instCalView];
+        cvDrop.classList.remove('open');
+        renderInstCalBody();
+      };
+    });
+
+    // 등록 버튼
+    document.getElementById('inst-reg-btn').onclick = openRegisterModal;
+
+    renderInstCalBody();
+  }
+
+  function renderInstCalBody() {
+    var body = document.getElementById('inst-cal-body');
+    if (!body) return;
+    var v = state.instCalView || 'month';
+    body.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">불러오는 중...</div>';
+    if (v === 'month') renderInstMonthInCard(body);
+    else if (v === 'week') renderInstWeekInCard(body);
+    else if (v === 'day') renderInstDayInCard(body);
+  }
+
+  function getInstCalMonthYear() {
+    var today = new Date();
+    var d = new Date(today.getFullYear(), today.getMonth() + (state.instCalMonthOffset || 0), 1);
+    return { year: d.getFullYear(), month: d.getMonth() };
+  }
+
+  function renderInstMonthInCard(container) {
+    var my = getInstCalMonthYear();
+    var year = my.year, month = my.month;
+    var firstDay = new Date(year, month, 1);
+    var startDow = (firstDay.getDay() + 6) % 7;
+    var totalDays = new Date(year, month + 1, 0).getDate();
+    var today = todayStr();
+    var gs = new Date(firstDay); gs.setDate(gs.getDate() - startDow);
+    var gsStr = gs.getFullYear() + '-' + String(gs.getMonth()+1).padStart(2,'0') + '-' + String(gs.getDate()).padStart(2,'0');
+    var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
+
+    container.innerHTML =
+      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
+        '<button class="btn-nav" id="inst-mo-prev">‹</button>' +
+        '<span style="font-size:16px;font-weight:700;color:var(--gray-800);">' + year + '년 ' + (month+1) + '월</span>' +
+        '<button class="btn-nav" id="inst-mo-next">›</button>' +
+      '</div>' +
+      '<div class="month-dow-row"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>' +
+      '<div class="month-grid" id="inst-mo-grid"><div style="grid-column:1/-1;text-align:center;padding:16px;font-size:12px;color:#aaa;">불러오는 중...</div></div>';
+
+    document.getElementById('inst-mo-prev').onclick = function(){ state.instCalMonthOffset--; renderInstCalBody(); };
+    document.getElementById('inst-mo-next').onclick = function(){ state.instCalMonthOffset++; renderInstCalBody(); };
+
+    fetchRange(gsStr, gridDays).then(function(dataMap) {
+      var html = '';
+      for (var i = 0; i < gridDays; i++) {
+        var d = addDays(gsStr, i);
+        var dp = d.split('-');
+        var isOther = parseInt(dp[1]) - 1 !== month;
+        var isToday = d === today; var isSel = d === state.currentDate;
+        var list = dataMap[d] || [];
+        var dots = Math.min(list.length, 3);
+        var cls = 'm-day' + (isOther ? ' other-mo' : '') + (isToday ? ' is-today' : '') + (isSel ? ' is-selected' : '');
+        html += '<div class="' + cls + '" onclick="App.pickInstDate(\'' + d + '\')">';
+        html += '<div class="m-num-wrap"><span class="m-num">' + parseInt(dp[2]) + '</span></div>';
+        if (dots) { html += '<div class="m-dots">'; for (var j = 0; j < dots; j++) html += '<div class="m-dot"></div>'; html += '</div>'; }
+        html += '</div>';
+      }
+      var grid = document.getElementById('inst-mo-grid');
+      if (grid) grid.innerHTML = html;
+    });
+  }
+
+  function renderInstWeekInCard(container) {
+    var dates = getWeekDates(state.instWeekOff || 0);
+    var today = todayStr();
+    var dayNames = ['월','화','수','목','금','토','일'];
+    fetchRange(dates[0], 7).then(function(dataMap) {
+      var f = dates[0].split('-'), l = dates[6].split('-');
+      var html =
+        '<div class="cal-nav-row" style="margin-bottom:12px;">' +
+          '<button class="btn-nav" id="inst-wk-prev">‹</button>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--gray-700);">' + parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일</span>' +
+          '<button class="btn-nav" id="inst-wk-next">›</button>' +
+        '</div>' +
+        '<div class="col-view col-view-7">';
+      dates.forEach(function(d, i) {
+        var list = dataMap[d] || [];
+        var isToday = d === today; var isSel = d === state.currentDate;
+        html += '<div class="col-day">';
+        html += '<div class="col-day-header' + (isToday?' is-today':'') + (isSel?' is-selected':'') + '" onclick="App.pickInstDate(\'' + d + '\')">';
+        html += '<div class="col-dn">' + dayNames[i] + '</div><div class="col-dd">' + parseInt(d.split('-')[2]) + '</div></div>';
+        html += '<div class="col-day-body">';
+        if (!list.length) { html += '<div class="col-empty">-</div>'; }
+        else { list.forEach(function(r){ html += '<div class="col-event"><div class="col-event-name">' + r['이름'] + '</div><div class="col-event-time">' + r['시작시간'] + '~' + r['종료시간'] + '</div></div>'; }); }
+        html += '</div></div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+      document.getElementById('inst-wk-prev').onclick = function(){ state.instWeekOff = (state.instWeekOff||0) - 1; renderInstCalBody(); };
+      document.getElementById('inst-wk-next').onclick = function(){ state.instWeekOff = (state.instWeekOff||0) + 1; renderInstCalBody(); };
+    });
+  }
+
+  function renderInstDayInCard(container) {
+    container.innerHTML =
+      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
+        '<button class="btn-nav" id="inst-dy-prev">‹</button>' +
+        '<span style="font-size:14px;font-weight:600;color:var(--gray-700);" id="inst-dy-label">' + formatDateKo(state.currentDate) + '</span>' +
+        '<button class="btn-nav" id="inst-dy-next">›</button>' +
+      '</div>' +
+      '<div class="legend" style="margin-bottom:12px;">' +
+        '<div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>등록 가능</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>이미 예약됨</span></div>' +
+      '</div>' +
+      '<div class="time-grid-wrap">' +
+        '<div class="time-grid-header"><span>시간</span><span>상태</span></div>' +
+        '<div id="time-grid-body"></div>' +
+      '</div>';
+    document.getElementById('inst-dy-prev').onclick = function(){
+      state.currentDate = addDays(state.currentDate, -1);
+      var lbl = document.getElementById('inst-dy-label');
+      if(lbl) lbl.textContent = formatDateKo(state.currentDate);
+      loadSlots();
+    };
+    document.getElementById('inst-dy-next').onclick = function(){
+      state.currentDate = addDays(state.currentDate, 1);
+      var lbl = document.getElementById('inst-dy-label');
+      if(lbl) lbl.textContent = formatDateKo(state.currentDate);
+      loadSlots();
+    };
     loadSlots();
   }
 
-  function instChangeDate(delta) {
-    state.currentDate = addDays(state.currentDate, delta);
-    var t = document.getElementById('inst-date-title');
-    if (t) t.textContent = formatDateKo(state.currentDate);
-    loadSlots();
-  }
-
-  function goInstStep(step) {
-    if (step === 1) renderInstStep1();
-    else if (step === 2) renderInstStep2();
+  function pickInstDate(date) {
+    state.currentDate = date;
+    state.instCalView = 'day';
+    var lbl = document.getElementById('inst-cv-label');
+    if(lbl) lbl.textContent = '일별';
+    document.querySelectorAll('[data-cv]').forEach(function(el){ el.classList.toggle('active', el.dataset.cv === 'day'); });
+    renderInstCalBody();
   }
 
   function openRegModal() { openRegisterModal(); }
@@ -1444,7 +1587,7 @@ const App = (() => {
     initLanding();
   }
 
-  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, selectInstRegion: selectInstRegion, goInstStep: goInstStep, openRegModal: openRegModal };
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, pickInstDate: pickInstDate, openRegModal: openRegModal };
 })();
 
 window.addEventListener('load', function(){ App.init(); });
