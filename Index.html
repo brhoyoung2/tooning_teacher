@@ -736,11 +736,11 @@
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="view-type-wrap" id="view-type-wrap">
-        <button class="view-type-btn" id="view-type-btn"><span id="view-type-label">주</span> ▾</button>
+        <button class="view-type-btn" id="view-type-btn"><span id="view-type-label">월</span> ▾</button>
         <div class="view-type-dropdown" id="view-type-dropdown">
           <div class="vt-item" data-view="day">일 <span class="vt-key">D</span></div>
-          <div class="vt-item active" data-view="week">주 <span class="vt-key">W</span></div>
-          <div class="vt-item" data-view="month">월 <span class="vt-key">M</span></div>
+          <div class="vt-item" data-view="week">주 <span class="vt-key">W</span></div>
+          <div class="vt-item active" data-view="month">월 <span class="vt-key">M</span></div>
           <div class="vt-item" data-view="year">연도 <span class="vt-key">Y</span></div>
           <div class="vt-item" data-view="agenda">일정 <span class="vt-key">A</span></div>
           <div class="vt-item" data-view="4day">4일 <span class="vt-key">X</span></div>
@@ -773,7 +773,7 @@ const App = (() => {
     selectedSlots: [],
     instructorTab: 'grid',
     weekOffset: 0,
-    viewType: 'week',
+    viewType: 'month',
     monthOffset: 0,
     yearOffset: 0,
     instCalView: 'month',
