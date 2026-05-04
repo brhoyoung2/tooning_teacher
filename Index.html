@@ -728,33 +728,8 @@
     </div>
     <span class="header-badge badge-teacher">선생님</span>
   </header>
-  <div class="filter-bar" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button class="btn-nav" id="week-prev">‹</button>
-      <span style="font-size:14px;font-weight:600;color:var(--gray-700)" id="week-range"></span>
-      <button class="btn-nav" id="week-next">›</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="view-type-wrap" id="view-type-wrap">
-        <button class="view-type-btn" id="view-type-btn"><span id="view-type-label">월</span> ▾</button>
-        <div class="view-type-dropdown" id="view-type-dropdown">
-          <div class="vt-item" data-view="day">일 <span class="vt-key">D</span></div>
-          <div class="vt-item" data-view="week">주 <span class="vt-key">W</span></div>
-          <div class="vt-item active" data-view="month">월 <span class="vt-key">M</span></div>
-          <div class="vt-item" data-view="year">연도 <span class="vt-key">Y</span></div>
-          <div class="vt-item" data-view="agenda">일정 <span class="vt-key">A</span></div>
-          <div class="vt-item" data-view="4day">4일 <span class="vt-key">X</span></div>
-        </div>
-      </div>
-      <select class="filter-select" id="teacher-region-select">
-        <option value="">전체 지역</option>
-      </select>
-    </div>
-  </div>
-  <div class="content-area">
-    <div class="week-strip" id="week-strip"></div>
-    <div class="section-title" id="section-date-title"><span class="dot"></span><span id="schedule-date-label">날짜를 선택하세요</span></div>
-    <div id="schedule-cards" class="schedule-cards"></div>
+  <div class="content-area" style="padding:0;display:flex;flex-direction:column;">
+    <div id="teacher-home-view" style="flex:1;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -780,6 +755,9 @@ const App = (() => {
     instCalMonthOffset: 0,
     instWeekOff: 0,
     instDatePicked: false,
+    teacherCalView: 'month',
+    teacherCalMonthOff: 0,
+    teacherWeekOff: 0,
   };
 
   function todayStr() {
@@ -1314,140 +1292,218 @@ const App = (() => {
 
   function initTeacher() {
     document.getElementById('teacher-back').onclick = function(){ showPage('page-landing'); };
-    state.weekOffset = state.weekOffset || 0;
-    state.monthOffset = state.monthOffset || 0;
-    state.yearOffset = state.yearOffset || 0;
-    state.viewType = state.viewType || 'week';
+    renderTeacherHome();
+  }
 
-    document.getElementById('week-prev').onclick = function(){ navigateView(-1); };
-    document.getElementById('week-next').onclick = function(){ navigateView(1); };
-    document.getElementById('teacher-region-select').onchange = function(e){
+  function renderTeacherHome() {
+    var hv = document.getElementById('teacher-home-view');
+    var calView = state.teacherCalView || 'month';
+    var cvLabels = { month: '월별', week: '주별', day: '일별' };
+    var regionOptions = '<option value="">전체 지역</option>' +
+      state.regions.map(function(r){
+        return '<option value="' + r + '"' + (state.region === r ? ' selected' : '') + '>' + r + '</option>';
+      }).join('');
+
+    hv.innerHTML =
+      '<div class="inst-home">' +
+      '<div class="sel-card">' +
+        '<div class="sel-card-header">' +
+          '<div class="sel-card-title-wrap">' +
+            '<span class="sel-card-num" style="background:var(--secondary)">1</span>' +
+            '<span class="sel-card-label">지역을 선택하세요</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sel-card-body">' +
+          '<select class="sel-card-select' + (state.region ? ' chosen' : '') + '" id="teacher-region-sel">' + regionOptions + '</select>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sel-card">' +
+        '<div class="sel-card-header">' +
+          '<div class="sel-card-title-wrap">' +
+            '<span class="sel-card-num" style="background:var(--secondary)">2</span>' +
+            '<span class="sel-card-label">일정을 선택하세요</span>' +
+          '</div>' +
+          '<div class="view-type-wrap" id="teacher-cv-wrap">' +
+            '<button class="view-type-btn" id="teacher-cv-btn"><span id="teacher-cv-label">' + cvLabels[calView] + '</span> ▾</button>' +
+            '<div class="view-type-dropdown" id="teacher-cv-drop">' +
+              '<div class="vt-item' + (calView==='month'?' active':'') + '" data-tcv="month">월별</div>' +
+              '<div class="vt-item' + (calView==='week'?' active':'') + '" data-tcv="week">주별</div>' +
+              '<div class="vt-item' + (calView==='day'?' active':'') + '" data-tcv="day">일별</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sel-card-body" id="teacher-cal-body" style="padding:16px 12px 12px;"></div>' +
+      '</div>' +
+      '</div>';
+
+    document.getElementById('teacher-region-sel').onchange = function(e) {
       state.region = e.target.value;
       scheduleCache = {};
-      renderCurrentView();
+      e.target.classList.toggle('chosen', !!state.region);
+      renderTeacherCalBody();
     };
 
-    var vtBtn = document.getElementById('view-type-btn');
-    var vtDrop = document.getElementById('view-type-dropdown');
-    vtBtn.onclick = function(e) { e.stopPropagation(); vtDrop.classList.toggle('open'); };
-    document.addEventListener('click', function() { vtDrop.classList.remove('open'); });
-    document.querySelectorAll('.vt-item').forEach(function(el) {
-      el.onclick = function() { setViewType(el.dataset.view); };
+    var cvBtn = document.getElementById('teacher-cv-btn');
+    var cvDrop = document.getElementById('teacher-cv-drop');
+    cvBtn.onclick = function(e) { e.stopPropagation(); cvDrop.classList.toggle('open'); };
+    document.addEventListener('click', function() { if(cvDrop) cvDrop.classList.remove('open'); });
+    document.querySelectorAll('[data-tcv]').forEach(function(el) {
+      el.onclick = function() {
+        state.teacherCalView = el.dataset.tcv;
+        document.querySelectorAll('[data-tcv]').forEach(function(x){ x.classList.toggle('active', x.dataset.tcv === state.teacherCalView); });
+        var lbl = document.getElementById('teacher-cv-label');
+        if (lbl) lbl.textContent = cvLabels[state.teacherCalView];
+        cvDrop.classList.remove('open');
+        renderTeacherCalBody();
+      };
     });
 
-    renderTeacherRegions();
-    setViewType(state.viewType);
+    renderTeacherCalBody();
   }
 
-  function renderTeacherRegions() {
-    var sel = document.getElementById('teacher-region-select');
-    sel.innerHTML = '<option value="">전체 지역</option>' +
-      state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
+  function renderTeacherCalBody() {
+    var body = document.getElementById('teacher-cal-body');
+    if (!body) return;
+    var v = state.teacherCalView || 'month';
+    body.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;font-size:13px;">불러오는 중...</div>';
+    if (v === 'month') renderTeacherMonthInCard(body);
+    else if (v === 'week') renderTeacherWeekInCard(body);
+    else if (v === 'day') renderTeacherDayInCard(body);
   }
 
-  function setViewType(type) {
-    state.viewType = type;
-    var labels = { day:'일', week:'주', month:'월', year:'연도', agenda:'일정', '4day':'4일' };
-    document.getElementById('view-type-label').textContent = labels[type] || type;
-    document.querySelectorAll('.vt-item').forEach(function(el) {
-      el.classList.toggle('active', el.dataset.view === type);
-    });
-    document.getElementById('view-type-dropdown').classList.remove('open');
-    renderCurrentView();
-  }
-
-  function navigateView(dir) {
-    var v = state.viewType;
-    if (v === 'day') state.currentDate = addDays(state.currentDate, dir);
-    else if (v === 'week') state.weekOffset += dir;
-    else if (v === '4day') state.currentDate = addDays(state.currentDate, dir * 4);
-    else if (v === 'month') state.monthOffset += dir;
-    else if (v === 'year') state.yearOffset += dir;
-    renderCurrentView();
-  }
-
-  function getMonthYear() {
+  function renderTeacherMonthInCard(container) {
     var today = new Date();
-    var d = new Date(today.getFullYear(), today.getMonth() + state.monthOffset, 1);
-    return { year: d.getFullYear(), month: d.getMonth() };
+    var d = new Date(today.getFullYear(), today.getMonth() + (state.teacherCalMonthOff || 0), 1);
+    var year = d.getFullYear(), month = d.getMonth();
+    var firstDay = new Date(year, month, 1);
+    var startDow = (firstDay.getDay() + 6) % 7;
+    var totalDays = new Date(year, month + 1, 0).getDate();
+    var td = todayStr();
+    var gs = new Date(firstDay); gs.setDate(gs.getDate() - startDow);
+    var gsStr = gs.getFullYear() + '-' + String(gs.getMonth()+1).padStart(2,'0') + '-' + String(gs.getDate()).padStart(2,'0');
+    var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
+
+    container.innerHTML =
+      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
+        '<button class="btn-nav" id="tch-mo-prev">‹</button>' +
+        '<span style="font-size:16px;font-weight:700;color:var(--gray-800);">' + year + '년 ' + (month+1) + '월</span>' +
+        '<button class="btn-nav" id="tch-mo-next">›</button>' +
+      '</div>' +
+      '<div class="month-dow-row"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>' +
+      '<div class="month-grid" id="tch-mo-grid"><div style="grid-column:1/-1;text-align:center;padding:16px;font-size:12px;color:#aaa;">불러오는 중...</div></div>';
+
+    document.getElementById('tch-mo-prev').onclick = function(){ state.teacherCalMonthOff = (state.teacherCalMonthOff||0) - 1; renderTeacherCalBody(); };
+    document.getElementById('tch-mo-next').onclick = function(){ state.teacherCalMonthOff = (state.teacherCalMonthOff||0) + 1; renderTeacherCalBody(); };
+
+    fetchRange(gsStr, gridDays).then(function(dataMap) {
+      var html = '';
+      for (var i = 0; i < gridDays; i++) {
+        var day = addDays(gsStr, i);
+        var dp = day.split('-');
+        var isOther = parseInt(dp[1]) - 1 !== month;
+        var isToday = day === td; var isSel = day === state.currentDate;
+        var list = dataMap[day] || [];
+        var dots = Math.min(list.length, 3);
+        var cls = 'm-day' + (isOther?' other-mo':'') + (isToday?' is-today':'') + (isSel?' is-selected':'');
+        html += '<div class="' + cls + '" onclick="App.pickTeacherDate(\'' + day + '\')">';
+        html += '<div class="m-num-wrap"><span class="m-num">' + parseInt(dp[2]) + '</span></div>';
+        if (dots) { html += '<div class="m-dots">'; for (var j=0;j<dots;j++) html += '<div class="m-dot" style="background:var(--secondary)"></div>'; html += '</div>'; }
+        html += '</div>';
+      }
+      var grid = document.getElementById('tch-mo-grid');
+      if (grid) grid.innerHTML = html;
+    });
   }
 
-  function getViewYear() {
-    return new Date().getFullYear() + state.yearOffset;
-  }
-
-  function updateNavLabel() {
-    var v = state.viewType;
-    var el = document.getElementById('week-range');
-    var prev = document.getElementById('week-prev');
-    var next = document.getElementById('week-next');
-    prev.style.display = v === 'agenda' ? 'none' : '';
-    next.style.display = v === 'agenda' ? 'none' : '';
-    if (v === 'day') {
-      el.textContent = formatDateKo(state.currentDate);
-    } else if (v === 'week') {
-      var dates = getWeekDates(state.weekOffset);
-      var f = dates[0].split('-'), l = dates[6].split('-');
-      el.textContent = parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일';
-    } else if (v === 'month') {
-      var my = getMonthYear();
-      el.textContent = my.year + '년 ' + (my.month + 1) + '월';
-    } else if (v === 'year') {
-      el.textContent = getViewYear() + '년';
-    } else if (v === 'agenda') {
-      el.textContent = '다가오는 일정';
-    } else if (v === '4day') {
-      var s = state.currentDate.split('-'), e4 = addDays(state.currentDate, 3).split('-');
-      el.textContent = parseInt(s[1]) + '월 ' + parseInt(s[2]) + '일 ~ ' + parseInt(e4[1]) + '월 ' + parseInt(e4[2]) + '일';
-    }
-  }
-
-  function renderCurrentView() {
-    var v = state.viewType;
-    var strip = document.getElementById('week-strip');
-    var dateTitle = document.getElementById('section-date-title');
-    strip.style.display = v === 'day' ? '' : 'none';
-    dateTitle.style.display = v === 'day' ? '' : 'none';
-    if (v === 'day') renderWeekStrip();
-    updateNavLabel();
-    var container = document.getElementById('schedule-cards');
-    container.innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">불러오는 중...</p></div>';
-    if (v === 'day') renderDayView(container);
-    else if (v === 'week') renderWeekView(container);
-    else if (v === 'month') renderMonthView(container);
-    else if (v === 'year') renderYearView(container);
-    else if (v === 'agenda') renderAgendaView(container);
-    else if (v === '4day') render4DayView(container);
-  }
-
-  function renderWeekStrip() {
-    var dates = getWeekDates(state.weekOffset);
-    var today = todayStr();
+  function renderTeacherWeekInCard(container) {
+    var dates = getWeekDates(state.teacherWeekOff || 0);
+    var td = todayStr();
     var dayNames = ['월','화','수','목','금','토','일'];
-    document.getElementById('week-strip').innerHTML = dates.map(function(d, i) {
-      var dd = parseInt(d.split('-')[2]);
-      var cls = (d === today ? 'today ' : '') + (d === state.currentDate ? 'selected' : '');
-      return '<div class="day-pill ' + cls + '" onclick="App.selectDay(\'' + d + '\')">' +
-        '<span class="day-name">' + dayNames[i] + '</span>' +
-        '<span class="day-num">' + dd + '</span>' +
+    fetchRange(dates[0], 7).then(function(dataMap) {
+      var f = dates[0].split('-'), l = dates[6].split('-');
+      var html =
+        '<div class="cal-nav-row" style="margin-bottom:12px;">' +
+          '<button class="btn-nav" id="tch-wk-prev">‹</button>' +
+          '<span style="font-size:13px;font-weight:600;color:var(--gray-700);">' + parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일</span>' +
+          '<button class="btn-nav" id="tch-wk-next">›</button>' +
+        '</div>' +
+        '<div class="col-view col-view-7">';
+      dates.forEach(function(d, i) {
+        var list = dataMap[d] || [];
+        var isToday = d === td; var isSel = d === state.currentDate;
+        html += '<div class="col-day">';
+        html += '<div class="col-day-header' + (isToday?' is-today':'') + (isSel?' is-selected':'') + '" onclick="App.pickTeacherDate(\'' + d + '\')">';
+        html += '<div class="col-dn">' + dayNames[i] + '</div><div class="col-dd">' + parseInt(d.split('-')[2]) + '</div></div>';
+        html += '<div class="col-day-body">';
+        if (!list.length) { html += '<div class="col-empty">-</div>'; }
+        else { list.forEach(function(r){ html += '<div class="col-event" style="background:#EDE9FE;border-color:var(--secondary)"><div class="col-event-name" style="color:#4C3D9E">' + r['이름'] + '</div><div class="col-event-time" style="color:var(--secondary)">' + r['시작시간'] + '~' + r['종료시간'] + '</div></div>'; }); }
+        html += '</div></div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+      document.getElementById('tch-wk-prev').onclick = function(){ state.teacherWeekOff = (state.teacherWeekOff||0) - 1; renderTeacherCalBody(); };
+      document.getElementById('tch-wk-next').onclick = function(){ state.teacherWeekOff = (state.teacherWeekOff||0) + 1; renderTeacherCalBody(); };
+    });
+  }
+
+  function renderTeacherDayInCard(container) {
+    container.innerHTML =
+      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
+        '<button class="btn-nav" id="tch-dy-prev">‹</button>' +
+        '<span style="font-size:14px;font-weight:600;color:var(--gray-700);" id="tch-dy-label">' + formatDateKo(state.currentDate) + '</span>' +
+        '<button class="btn-nav" id="tch-dy-next">›</button>' +
+      '</div>' +
+      '<div id="teacher-schedule-list"></div>';
+    document.getElementById('tch-dy-prev').onclick = function(){
+      state.currentDate = addDays(state.currentDate, -1);
+      var lbl = document.getElementById('tch-dy-label'); if(lbl) lbl.textContent = formatDateKo(state.currentDate);
+      loadTeacherDaySchedule();
+    };
+    document.getElementById('tch-dy-next').onclick = function(){
+      state.currentDate = addDays(state.currentDate, 1);
+      var lbl = document.getElementById('tch-dy-label'); if(lbl) lbl.textContent = formatDateKo(state.currentDate);
+      loadTeacherDaySchedule();
+    };
+    loadTeacherDaySchedule();
+  }
+
+  function loadTeacherDaySchedule() {
+    var el = document.getElementById('teacher-schedule-list');
+    if (!el) return;
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;"><div class="spinner" style="margin:0 auto 10px;border-top-color:var(--secondary);"></div><p style="font-size:13px;">불러오는 중...</p></div>';
+    fetchDay(state.currentDate).then(function(list) {
+      if (!list.length) {
+        el.innerHTML = '<div class="schedule-empty"><div class="empty-icon">📋</div><p>등록된 강사 일정이 없습니다</p><small>' + formatDateKo(state.currentDate) + '에는 등록된 강의가 없어요</small></div>';
+        return;
+      }
+      el.innerHTML = list.map(function(r) {
+        return '<div class="schedule-card" style="margin-bottom:10px;">' +
+          '<div class="scard-icon" style="background:linear-gradient(135deg,var(--secondary),#4C3D9E)">👩‍🏫</div>' +
+          '<div class="scard-body">' +
+            '<div class="scard-name">' + r['이름'] + ' 강사</div>' +
+            '<div class="scard-time" style="color:var(--secondary)">🕐 ' + r['시작시간'] + ' ~ ' + r['종료시간'] + '</div>' +
+            '<div class="scard-meta"><span class="scard-region-tag">📍 ' + r['지역'] + '</span></div>' +
+          '</div>' +
         '</div>';
-    }).join('');
+      }).join('');
+    });
   }
 
-  function selectDay(date) {
+  function pickTeacherDate(date) {
     state.currentDate = date;
-    if (state.viewType !== 'day') {
-      setViewType('day');
-    } else {
-      renderWeekStrip();
-      renderCurrentView();
-    }
+    state.teacherCalView = 'day';
+    var lbl = document.getElementById('teacher-cv-label');
+    if (lbl) lbl.textContent = '일별';
+    document.querySelectorAll('[data-tcv]').forEach(function(el){ el.classList.toggle('active', el.dataset.tcv === 'day'); });
+    renderTeacherCalBody();
   }
 
+  function selectDay(date) { pickTeacherDate(date); }
   function goToMonth(year, month) {
     var today = new Date();
-    state.monthOffset = (year - today.getFullYear()) * 12 + (month - today.getMonth());
-    setViewType('month');
+    state.teacherCalMonthOff = (year - today.getFullYear()) * 12 + (month - today.getMonth());
+    state.teacherCalView = 'month';
+    renderTeacherCalBody();
   }
 
   // -- Day view --
@@ -1635,7 +1691,7 @@ const App = (() => {
     initLanding();
   }
 
-  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, pickInstDate: pickInstDate, openRegModal: openRegModal };
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, pickInstDate: pickInstDate, openRegModal: openRegModal, pickTeacherDate: pickTeacherDate };
 })();
 
 window.addEventListener('load', function(){ App.init(); });
@@ -1711,9 +1767,9 @@ class Bubbles {
   }
   addBall(pos, scale, color) {
     const mat = color ? new THREE.MeshLambertMaterial({
-      color: new THREE.Color('silver'),
+      color: new THREE.Color('#e8f4ff'),
       emissive: new THREE.Color(color),
-      emissiveIntensity: 0.32
+      emissiveIntensity: 0.55
     }) : this.mat;
     const mesh = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), mat);
     mesh.position.set(pos.x, pos.y, pos.z);
@@ -1728,12 +1784,12 @@ class Bubbles {
   }
   createBalls(n) {
     const palette = [
-      // 기존 (선명한 하늘)
-      '#38BDF8', '#0EA5E9', '#22D3EE', '#06B6D4',
-      // 은은한 하늘색
-      '#BAE6FD', '#CFFAFE', '#DBEAFE', '#E0F2FE', '#F0F9FF',
-      // 하늘색 (중간톤)
-      '#7DD3FC', '#67E8F9', '#93C5FD', '#A5F3FC',
+      // 선명한 하늘 (비중 높임)
+      '#38BDF8', '#38BDF8', '#0EA5E9', '#0EA5E9', '#22D3EE', '#06B6D4',
+      // 하늘색 중간톤
+      '#7DD3FC', '#7DD3FC', '#67E8F9', '#93C5FD',
+      // 은은한 하늘
+      '#BAE6FD', '#CFFAFE', '#A5F3FC',
     ];
     for (let i = 0; i < n; i++) {
       const s = randomInRange(0.25, 0.7);
