@@ -1709,8 +1709,13 @@ class Bubbles {
       emissiveIntensity: 0.3
     });
   }
-  addBall(pos, scale) {
-    const mesh = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), this.mat);
+  addBall(pos, scale, color) {
+    const mat = color ? new THREE.MeshLambertMaterial({
+      color: new THREE.Color('silver'),
+      emissive: new THREE.Color(color),
+      emissiveIntensity: 0.32
+    }) : this.mat;
+    const mesh = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), mat);
     mesh.position.set(pos.x, pos.y, pos.z);
     mesh.scale.setScalar(scale);
     this.scene.add(mesh);
@@ -1722,9 +1727,11 @@ class Bubbles {
     return obj;
   }
   createBalls(n) {
+    const palette = ['#38BDF8', '#7DD3FC', '#BAE6FD', '#0EA5E9', '#22D3EE', '#A5F3FC', '#E0F2FE', '#0284C7'];
     for (let i = 0; i < n; i++) {
       const s = randomInRange(0.25, 0.7);
-      this.balls.push(this.addBall({ x: randomInRange(-3, 3), y: randomInRange(-3, 3), z: 0 }, s));
+      const color = palette[Math.floor(Math.random() * palette.length)];
+      this.balls.push(this.addBall({ x: randomInRange(-3, 3), y: randomInRange(-3, 3), z: 0 }, s, color));
     }
   }
   addPlane(pos, rot) {
