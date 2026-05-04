@@ -98,55 +98,50 @@
     .page.active { display: flex; flex-direction: column; }
 
     /* ===================== LANDING ===================== */
-    #page-landing {
-      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
-      position: relative; overflow: hidden;
+    #page-landing { background: #fff; position: relative; overflow: hidden; }
+    .canvas-wrap {
+      position: absolute; inset: 0; z-index: 0;
+      pointer-events: none;
     }
-    #page-landing::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(circle at 20% 80%, rgba(255,39,120,0.18) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(108,99,255,0.15) 0%, transparent 50%);
-    }
+    .canvas-wrap canvas { width: 100% !important; height: 100% !important; }
     .landing-inner {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 40px 24px; gap: 48px;
+      min-height: 100vh; padding: 40px 24px; gap: 40px;
     }
-    .landing-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .landing-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
     .landing-logo {
-      width: 80px; height: 80px; border-radius: 20px; object-fit: cover;
-      box-shadow: 0 8px 32px rgba(255,39,120,0.4), 0 0 0 3px rgba(255,255,255,0.1);
+      width: 76px; height: 76px; border-radius: 22px; object-fit: cover;
+      box-shadow: 0 8px 32px rgba(255,39,120,0.18);
     }
     .landing-title {
-      font-size: clamp(22px, 5vw, 32px); font-weight: 800;
-      color: #fff; text-align: center; line-height: 1.3; letter-spacing: -0.5px;
+      font-size: clamp(26px, 5vw, 42px); font-weight: 900;
+      color: #111827; text-align: center; line-height: 1.2; letter-spacing: -1px;
     }
-    .landing-title span { color: var(--primary-light); }
-    .landing-subtitle { font-size: 14px; color: rgba(255,255,255,0.55); text-align: center; }
+    .landing-title span { color: var(--primary); }
+    .landing-subtitle { font-size: 14px; color: var(--gray-400); text-align: center; margin-top: 6px; }
     .landing-cards {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 16px; width: 100%; max-width: 560px;
+      gap: 16px; width: 100%; max-width: 520px;
     }
-    @media (max-width: 480px) { .landing-cards { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .landing-cards { grid-template-columns: 1fr; max-width: 320px; } }
     .landing-card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: var(--radius-lg); padding: 32px 24px;
+      background: #fff; border: 2px solid var(--gray-100);
+      border-radius: var(--radius-lg); padding: 28px 20px;
       cursor: pointer; text-align: center;
       transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      backdrop-filter: blur(12px); position: relative; overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
     }
-    .landing-card:hover { transform: translateY(-6px) scale(1.02); }
-    .card-instructor { border-color: rgba(255,39,120,0.3); }
-    .card-instructor:hover { background: rgba(255,39,120,0.12); border-color: var(--primary); box-shadow: 0 0 40px rgba(255,39,120,0.2); }
-    .card-teacher:hover { background: rgba(108,99,255,0.08); border-color: var(--secondary); box-shadow: 0 0 40px rgba(108,99,255,0.15); }
-    .card-emoji { font-size: 44px; margin-bottom: 12px; display: block; }
-    .card-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .card-desc { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.5; }
-    .card-badge { display: inline-block; margin-top: 16px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .card-instructor .card-badge { background: var(--primary); color: #fff; }
-    .card-teacher .card-badge { background: var(--secondary); color: #fff; }
-    .landing-footer { color: rgba(255,255,255,0.25); font-size: 12px; text-align: center; }
+    .landing-card:hover { transform: translateY(-6px); }
+    .card-instructor:hover { border-color: var(--primary); box-shadow: 0 12px 40px rgba(255,39,120,0.15); }
+    .card-teacher:hover { border-color: var(--secondary); box-shadow: 0 12px 40px rgba(108,99,255,0.12); }
+    .card-emoji { font-size: 40px; margin-bottom: 12px; display: block; }
+    .card-title { font-size: 16px; font-weight: 700; color: var(--gray-800); margin-bottom: 6px; }
+    .card-desc { font-size: 12px; color: var(--gray-400); line-height: 1.6; }
+    .card-badge { display: inline-block; margin-top: 14px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .card-instructor .card-badge { background: var(--primary-bg); color: var(--primary); }
+    .card-teacher .card-badge { background: #EDE9FE; color: var(--secondary); }
+    .landing-footer { color: var(--gray-300); font-size: 12px; text-align: center; }
 
     /* ===================== APP HEADER ===================== */
     .app-header {
@@ -454,12 +449,13 @@
 
 <!-- ============ PAGE: LANDING ============ -->
 <div class="page active" id="page-landing">
+  <div class="canvas-wrap" id="canvas-container"></div>
   <div class="landing-inner">
     <div class="landing-logo-wrap">
       <img src="https://yt3.googleusercontent.com/U94zzlLDbgrOeTFNp0WHjRD1YrZ-CYCb6vxxxoAedp3Khv6W8vQMbyMVZw-T3XT8p3flgF8O=s900-c-k-c0x00ffffff-no-rj"
         alt="Tooning" class="landing-logo" onerror="this.style.display='none'">
       <div>
-        <div class="landing-title">투닝 강사<br><span>시간등록 서비스</span></div>
+        <div class="landing-title">AI 투닝 교육,<br><span>투닝 전문가 선생님들의</span><br>교육지원 서비스</div>
         <div class="landing-subtitle">Tooning Instructor Schedule Management</div>
       </div>
     </div>
@@ -468,16 +464,16 @@
         <span class="card-emoji">👩‍🏫</span>
         <div class="card-title">투닝 강사</div>
         <div class="card-desc">강의 가능 시간을<br>등록하고 관리하세요</div>
-        <span class="card-badge">시간 등록하기</span>
+        <span class="card-badge">시간 등록하기 →</span>
       </div>
       <div class="landing-card card-teacher" id="btn-teacher" role="button" tabindex="0">
         <span class="card-emoji">🏫</span>
         <div class="card-title">학교 선생님</div>
         <div class="card-desc">투닝 강사의<br>가능 시간을 확인하세요</div>
-        <span class="card-badge">시간표 보기</span>
+        <span class="card-badge">시간표 보기 →</span>
       </div>
     </div>
-    <div class="landing-footer">© 2025 Tooning · 강사 시간관리 시스템<br><span id="app-version" style="font-size:11px;opacity:0.4;margin-top:4px;display:block;"></span></div>
+    <div class="landing-footer">© 2025 Tooning · 강사 시간관리 시스템<br><span id="app-version" style="font-size:11px;opacity:0.5;margin-top:4px;display:block;"></span></div>
   </div>
 </div>
 
@@ -968,6 +964,173 @@ const App = (() => {
 })();
 
 window.addEventListener('load', function(){ App.init(); });
+</script>
+
+<script type="module">
+import * as THREE from 'https://esm.sh/three@0.124.0';
+import * as CANNON from 'https://esm.sh/cannon-es@0.18.0';
+
+const randomInRange = (min, max) => Math.random() * (max - min) + min;
+const deg2rad = (deg) => (deg * Math.PI) / 180;
+const calcAspect = (el) => el.clientWidth / el.clientHeight;
+const getViewport = (camera) => {
+  const pos = new THREE.Vector3();
+  const dist = camera.getWorldPosition(pos).distanceTo(new THREE.Vector3());
+  const h = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * dist;
+  return { width: h * (window.innerWidth / window.innerHeight), height: h };
+};
+
+class Bubbles {
+  constructor(sel) {
+    this.container = document.querySelector(sel);
+    this.objs = [];
+    this.balls = [];
+    this.planes = [];
+    this.mousePos = new THREE.Vector2(0, 0);
+    this.ballColor = '#FF2778';
+  }
+  init() {
+    if (!this.container) return;
+    this.createWorld();
+    this.createScene();
+    this.createCamera();
+    this.viewport = getViewport(this.camera);
+    this.createRenderer();
+    this.createMat();
+    this.createBalls(window.innerWidth < 600 ? 20 : 40);
+    this.createPlanes();
+    this.balls.forEach(b => { b.body.angularDamping = 0.2; b.body.linearDamping = 0.95; });
+    this.createFollowBall();
+    this.planes.forEach(p => p.mesh.visible = false);
+    this.followBall.mesh.visible = false;
+    this.createLight();
+    this.trackMouse();
+    this.onResize();
+    this.loop();
+  }
+  createWorld() {
+    this.world = new CANNON.World();
+    this.world.gravity.set(0, 0, 0);
+  }
+  createScene() { this.scene = new THREE.Scene(); }
+  createCamera() {
+    this.camera = new THREE.PerspectiveCamera(35, calcAspect(this.container), 10, 40);
+    this.camera.position.set(0, 0, 20);
+  }
+  createRenderer() {
+    this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    this.renderer.setClearColor(0x000000, 0);
+    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.CineonToneMapping;
+    this.renderer.toneMappingExposure = 1.5;
+    this.container.appendChild(this.renderer.domElement);
+  }
+  createMat() {
+    this.mat = new THREE.MeshLambertMaterial({
+      color: new THREE.Color('silver'),
+      emissive: new THREE.Color(this.ballColor),
+      emissiveIntensity: 0.3
+    });
+  }
+  addBall(pos, scale) {
+    const mesh = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), this.mat);
+    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.scale.setScalar(scale);
+    this.scene.add(mesh);
+    const body = new CANNON.Body({ mass: 1, shape: new CANNON.Box(new CANNON.Vec3(scale, scale, scale)) });
+    body.position.set(pos.x, pos.y, pos.z);
+    this.world.addBody(body);
+    const obj = { mesh, body };
+    this.objs.push(obj);
+    return obj;
+  }
+  createBalls(n) {
+    for (let i = 0; i < n; i++) {
+      const s = randomInRange(0.25, 0.7);
+      this.balls.push(this.addBall({ x: randomInRange(-3, 3), y: randomInRange(-3, 3), z: 0 }, s));
+    }
+  }
+  addPlane(pos, rot) {
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial());
+    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.rotation.set(rot.x, rot.y, rot.z);
+    this.scene.add(mesh);
+    const body = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+    body.position.set(pos.x, pos.y, pos.z);
+    body.quaternion.setFromEuler(rot.x, rot.y, rot.z);
+    this.world.addBody(body);
+    const obj = { mesh, body };
+    this.objs.push(obj);
+    return obj;
+  }
+  createPlanes() {
+    this.planes = [
+      this.addPlane({ x:0, y:0, z:0 },  { x:0, y:0, z:0 }),
+      this.addPlane({ x:0, y:0, z:8 },  { x:0, y:deg2rad(-180), z:0 }),
+      this.addPlane({ x:0, y:-4, z:0 }, { x:deg2rad(-90), y:0, z:0 }),
+      this.addPlane({ x:0, y:4, z:0 },  { x:deg2rad(90), y:0, z:0 }),
+    ];
+  }
+  createFollowBall() {
+    const mesh = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 32, 32), this.mat);
+    mesh.scale.setScalar(2);
+    this.scene.add(mesh);
+    const body = new CANNON.Body({ mass: 1, shape: new CANNON.Sphere(2), type: CANNON.Body.KINEMATIC });
+    this.world.addBody(body);
+    this.followBall = { mesh, body };
+    this.objs.push(this.followBall);
+  }
+  createLight() {
+    this.scene.add(new THREE.AmbientLight('#ffffff', 0.75));
+    const d = new THREE.DirectionalLight('#ffffff', 4);
+    d.position.set(0, 5, -5);
+    this.scene.add(d);
+    const s = new THREE.SpotLight(new THREE.Color(this.ballColor));
+    s.position.set(20, 20, 25);
+    this.scene.add(s);
+  }
+  trackMouse() {
+    const set = (x, y) => {
+      this.mousePos.x = (x / window.innerWidth) * 2 - 1;
+      this.mousePos.y = -(y / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', e => set(e.clientX, e.clientY));
+    window.addEventListener('touchmove', e => set(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  }
+  onResize() {
+    window.addEventListener('resize', () => {
+      this.camera.aspect = calcAspect(this.container);
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+      this.viewport = getViewport(this.camera);
+    });
+  }
+  update() {
+    this.objs.forEach(({ mesh, body }) => {
+      mesh.position.copy(body.position);
+      mesh.quaternion.copy(body.quaternion);
+    });
+    this.world.step(1 / 60);
+    this.balls.forEach(obj => {
+      const f = new THREE.Vector3().copy(obj.body.position).normalize().multiplyScalar(-36);
+      obj.body.applyForce(f);
+    });
+    const x = (this.mousePos.x * this.viewport.width) / 2;
+    const y = (this.mousePos.y * this.viewport.height) / 2;
+    this.followBall.body.position.set(x, y, 2.5);
+  }
+  loop() {
+    this.renderer.setAnimationLoop(() => {
+      this.update();
+      this.renderer.render(this.scene, this.camera);
+    });
+  }
+}
+
+const bubbles = new Bubbles('#canvas-container');
+bubbles.init();
 </script>
 </body>
 </html>
