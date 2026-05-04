@@ -1672,7 +1672,7 @@ class Bubbles {
     this.viewport = getViewport(this.camera);
     this.createRenderer();
     this.createMat();
-    this.createBalls(window.innerWidth < 600 ? 20 : 40);
+    this.createBalls(window.innerWidth < 600 ? 28 : 55);
     this.createPlanes();
     this.balls.forEach(b => { b.body.angularDamping = 0.2; b.body.linearDamping = 0.95; });
     this.createFollowBall();
@@ -1727,7 +1727,14 @@ class Bubbles {
     return obj;
   }
   createBalls(n) {
-    const palette = ['#38BDF8', '#7DD3FC', '#BAE6FD', '#0EA5E9', '#22D3EE', '#A5F3FC', '#E0F2FE', '#0284C7'];
+    const palette = [
+      // 기존 (선명한 하늘)
+      '#38BDF8', '#0EA5E9', '#22D3EE', '#06B6D4',
+      // 은은한 하늘색
+      '#BAE6FD', '#CFFAFE', '#DBEAFE', '#E0F2FE', '#F0F9FF',
+      // 하늘색 (중간톤)
+      '#7DD3FC', '#67E8F9', '#93C5FD', '#A5F3FC',
+    ];
     for (let i = 0; i < n; i++) {
       const s = randomInRange(0.25, 0.7);
       const color = palette[Math.floor(Math.random() * palette.length)];
