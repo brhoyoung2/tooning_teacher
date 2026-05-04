@@ -394,6 +394,118 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+
+    /* ===================== VIEW TYPE DROPDOWN ===================== */
+    .view-type-wrap { position: relative; }
+    .view-type-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 20px;
+      border: 1.5px solid var(--gray-200); background: #fff;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      color: var(--gray-700); white-space: nowrap; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .view-type-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .view-type-dropdown {
+      position: absolute; right: 0; top: calc(100% + 8px); z-index: 300;
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.15); overflow: hidden; min-width: 150px;
+      opacity: 0; transform: translateY(-8px) scale(0.97); pointer-events: none;
+      transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .view-type-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+    .vt-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 20px; font-size: 14px; cursor: pointer;
+      color: var(--gray-700); transition: background 0.15s; font-weight: 500;
+    }
+    .vt-item:hover { background: var(--gray-50); }
+    .vt-item.active { color: var(--primary); font-weight: 700; background: var(--primary-bg); }
+    .vt-key { font-size: 12px; color: var(--gray-300); font-weight: 400; }
+    .vt-item.active .vt-key { color: var(--primary-light); }
+
+    /* ===================== COLUMN VIEW (Week / 4-day) ===================== */
+    .col-view { display: grid; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .col-view-7 { grid-template-columns: repeat(7, minmax(90px, 1fr)); }
+    .col-view-4 { grid-template-columns: repeat(4, 1fr); }
+    .col-day { background: #fff; border-radius: 12px; border: 1.5px solid var(--gray-100); overflow: hidden; }
+    .col-day-header {
+      padding: 10px 6px; text-align: center;
+      border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.15s;
+    }
+    .col-day-header:hover { background: var(--primary-bg); }
+    .col-day-header.is-today { background: var(--primary-bg); }
+    .col-day-header.is-selected { background: var(--primary); }
+    .col-day-header.is-selected .col-dn,
+    .col-day-header.is-selected .col-dd { color: #fff !important; }
+    .col-dn { font-size: 11px; font-weight: 600; color: var(--gray-400); }
+    .col-dd { font-size: 15px; font-weight: 800; color: var(--gray-800); display: block; margin-top: 2px; }
+    .col-day-header.is-today .col-dd { color: var(--primary); }
+    .col-day-body { padding: 6px; min-height: 60px; }
+    .col-event {
+      background: var(--primary-bg); border-left: 3px solid var(--primary);
+      border-radius: 6px; padding: 5px 7px; font-size: 11px; margin-bottom: 4px;
+    }
+    .col-event-name { font-weight: 700; color: var(--primary-dark); }
+    .col-event-time { font-size: 10px; color: var(--primary); opacity: 0.8; margin-top: 2px; }
+    .col-empty { text-align: center; padding: 14px 4px; font-size: 11px; color: var(--gray-300); }
+
+    /* ===================== MONTH VIEW ===================== */
+    .month-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+    .month-dow-row span { text-align: center; font-size: 11px; font-weight: 600; color: var(--gray-400); padding: 6px 0; }
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .m-day {
+      aspect-ratio: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; border-radius: 8px; cursor: pointer; transition: background 0.15s;
+    }
+    .m-day:hover { background: var(--gray-50); }
+    .m-day.other-mo { opacity: 0.3; pointer-events: none; }
+    .m-day.is-today .m-num-wrap {
+      background: var(--primary); color: #fff; border-radius: 50%;
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    }
+    .m-day.is-selected { background: var(--primary-bg); }
+    .m-num { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .m-day.is-today .m-num { color: #fff; }
+    .m-dots { display: flex; gap: 2px; margin-top: 3px; justify-content: center; }
+    .m-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--primary); }
+
+    /* ===================== AGENDA VIEW ===================== */
+    .agenda-list { display: flex; flex-direction: column; }
+    .agenda-date-hdr {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 12px 0 6px; border-top: 1px solid var(--gray-100);
+    }
+    .agenda-date-hdr:first-child { border-top: none; }
+    .agenda-day-num { font-size: 26px; font-weight: 900; color: var(--gray-700); line-height: 1; min-width: 36px; }
+    .agenda-day-info { font-size: 12px; color: var(--gray-400); font-weight: 500; }
+    .agenda-date-hdr.is-today .agenda-day-num { color: var(--primary); }
+    .agenda-ev {
+      background: var(--primary-bg); border-left: 3px solid var(--primary);
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 6px;
+    }
+    .agenda-ev-time { font-size: 12px; font-weight: 700; color: var(--primary); }
+    .agenda-ev-name { font-size: 14px; font-weight: 700; color: var(--gray-800); margin-top: 2px; }
+    .agenda-ev-region { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
+    /* ===================== YEAR VIEW ===================== */
+    .year-view { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 480px) { .year-view { grid-template-columns: repeat(2, 1fr); } }
+    .yr-mo-cell {
+      background: #fff; border-radius: 12px;
+      border: 1.5px solid var(--gray-100); padding: 12px;
+      cursor: pointer; transition: all 0.2s; text-align: center;
+    }
+    .yr-mo-cell:hover { border-color: var(--primary); background: var(--primary-bg); }
+    .yr-mo-name { font-size: 14px; font-weight: 700; color: var(--gray-700); margin-bottom: 8px; }
+    .yr-mo-mini { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+    .yr-mini-d {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-size: 7px; color: var(--gray-400); border-radius: 3px;
+    }
+    .yr-mini-d.hd { color: var(--gray-300); font-weight: 600; font-size: 6px; }
+    .yr-mini-d.today-d { background: var(--primary); color: #fff; border-radius: 50%; }
+    .yr-mini-d.other { opacity: 0.2; }
   </style>
 </head>
 <body>
@@ -521,19 +633,32 @@
     </div>
     <span class="header-badge badge-teacher">선생님</span>
   </header>
-  <div class="filter-bar" style="justify-content:space-between;">
+  <div class="filter-bar" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="btn-nav" id="week-prev">‹</button>
       <span style="font-size:14px;font-weight:600;color:var(--gray-700)" id="week-range"></span>
       <button class="btn-nav" id="week-next">›</button>
     </div>
-    <select class="filter-select" id="teacher-region-select">
-      <option value="">전체 지역</option>
-    </select>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="view-type-wrap" id="view-type-wrap">
+        <button class="view-type-btn" id="view-type-btn"><span id="view-type-label">주</span> ▾</button>
+        <div class="view-type-dropdown" id="view-type-dropdown">
+          <div class="vt-item" data-view="day">일 <span class="vt-key">D</span></div>
+          <div class="vt-item active" data-view="week">주 <span class="vt-key">W</span></div>
+          <div class="vt-item" data-view="month">월 <span class="vt-key">M</span></div>
+          <div class="vt-item" data-view="year">연도 <span class="vt-key">Y</span></div>
+          <div class="vt-item" data-view="agenda">일정 <span class="vt-key">A</span></div>
+          <div class="vt-item" data-view="4day">4일 <span class="vt-key">X</span></div>
+        </div>
+      </div>
+      <select class="filter-select" id="teacher-region-select">
+        <option value="">전체 지역</option>
+      </select>
+    </div>
   </div>
   <div class="content-area">
     <div class="week-strip" id="week-strip"></div>
-    <div class="section-title"><span class="dot"></span><span id="schedule-date-label">날짜를 선택하세요</span></div>
+    <div class="section-title" id="section-date-title"><span class="dot"></span><span id="schedule-date-label">날짜를 선택하세요</span></div>
     <div id="schedule-cards" class="schedule-cards"></div>
   </div>
 </div>
@@ -864,15 +989,57 @@ const App = (() => {
   }
 
   // ---- TEACHER ----
+  var scheduleCache = {};
+
+  function fetchDay(date) {
+    var key = date + '::' + (state.region || '');
+    if (scheduleCache[key]) return Promise.resolve(scheduleCache[key]);
+    var qs = '?date=' + date;
+    if (state.region) qs += '&region=' + encodeURIComponent(state.region);
+    return fetch('/api/registrations' + qs)
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        scheduleCache[key] = Array.isArray(res) ? res : [];
+        return scheduleCache[key];
+      });
+  }
+
+  function fetchRange(startDate, count) {
+    var dates = [];
+    for (var i = 0; i < count; i++) dates.push(addDays(startDate, i));
+    return Promise.all(dates.map(function(d) { return fetchDay(d); }))
+      .then(function(results) {
+        var map = {};
+        dates.forEach(function(d, i) { map[d] = results[i]; });
+        return map;
+      });
+  }
+
   function initTeacher() {
     document.getElementById('teacher-back').onclick = function(){ showPage('page-landing'); };
-    state.weekOffset = 0;
-    document.getElementById('week-prev').onclick = function(){ state.weekOffset--; renderWeekStrip(); };
-    document.getElementById('week-next').onclick = function(){ state.weekOffset++; renderWeekStrip(); };
-    document.getElementById('teacher-region-select').onchange = function(e){ state.region = e.target.value; loadSchedule(); };
+    state.weekOffset = state.weekOffset || 0;
+    state.monthOffset = state.monthOffset || 0;
+    state.yearOffset = state.yearOffset || 0;
+    state.viewType = state.viewType || 'week';
+
+    document.getElementById('week-prev').onclick = function(){ navigateView(-1); };
+    document.getElementById('week-next').onclick = function(){ navigateView(1); };
+    document.getElementById('teacher-region-select').onchange = function(e){
+      state.region = e.target.value;
+      scheduleCache = {};
+      renderCurrentView();
+    };
+
+    var vtBtn = document.getElementById('view-type-btn');
+    var vtDrop = document.getElementById('view-type-dropdown');
+    vtBtn.onclick = function(e) { e.stopPropagation(); vtDrop.classList.toggle('open'); };
+    document.addEventListener('click', function() { vtDrop.classList.remove('open'); });
+    document.querySelectorAll('.vt-item').forEach(function(el) {
+      el.onclick = function() { setViewType(el.dataset.view); };
+    });
+
     renderTeacherRegions();
-    renderWeekStrip();
-    loadSchedule();
+    setViewType(state.viewType);
   }
 
   function renderTeacherRegions() {
@@ -881,43 +1048,118 @@ const App = (() => {
       state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
   }
 
+  function setViewType(type) {
+    state.viewType = type;
+    var labels = { day:'일', week:'주', month:'월', year:'연도', agenda:'일정', '4day':'4일' };
+    document.getElementById('view-type-label').textContent = labels[type] || type;
+    document.querySelectorAll('.vt-item').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.view === type);
+    });
+    document.getElementById('view-type-dropdown').classList.remove('open');
+    renderCurrentView();
+  }
+
+  function navigateView(dir) {
+    var v = state.viewType;
+    if (v === 'day') state.currentDate = addDays(state.currentDate, dir);
+    else if (v === 'week') state.weekOffset += dir;
+    else if (v === '4day') state.currentDate = addDays(state.currentDate, dir * 4);
+    else if (v === 'month') state.monthOffset += dir;
+    else if (v === 'year') state.yearOffset += dir;
+    renderCurrentView();
+  }
+
+  function getMonthYear() {
+    var today = new Date();
+    var d = new Date(today.getFullYear(), today.getMonth() + state.monthOffset, 1);
+    return { year: d.getFullYear(), month: d.getMonth() };
+  }
+
+  function getViewYear() {
+    return new Date().getFullYear() + state.yearOffset;
+  }
+
+  function updateNavLabel() {
+    var v = state.viewType;
+    var el = document.getElementById('week-range');
+    var prev = document.getElementById('week-prev');
+    var next = document.getElementById('week-next');
+    prev.style.display = v === 'agenda' ? 'none' : '';
+    next.style.display = v === 'agenda' ? 'none' : '';
+    if (v === 'day') {
+      el.textContent = formatDateKo(state.currentDate);
+    } else if (v === 'week') {
+      var dates = getWeekDates(state.weekOffset);
+      var f = dates[0].split('-'), l = dates[6].split('-');
+      el.textContent = parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일';
+    } else if (v === 'month') {
+      var my = getMonthYear();
+      el.textContent = my.year + '년 ' + (my.month + 1) + '월';
+    } else if (v === 'year') {
+      el.textContent = getViewYear() + '년';
+    } else if (v === 'agenda') {
+      el.textContent = '다가오는 일정';
+    } else if (v === '4day') {
+      var s = state.currentDate.split('-'), e4 = addDays(state.currentDate, 3).split('-');
+      el.textContent = parseInt(s[1]) + '월 ' + parseInt(s[2]) + '일 ~ ' + parseInt(e4[1]) + '월 ' + parseInt(e4[2]) + '일';
+    }
+  }
+
+  function renderCurrentView() {
+    var v = state.viewType;
+    var strip = document.getElementById('week-strip');
+    var dateTitle = document.getElementById('section-date-title');
+    strip.style.display = v === 'day' ? '' : 'none';
+    dateTitle.style.display = v === 'day' ? '' : 'none';
+    if (v === 'day') renderWeekStrip();
+    updateNavLabel();
+    var container = document.getElementById('schedule-cards');
+    container.innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">불러오는 중...</p></div>';
+    if (v === 'day') renderDayView(container);
+    else if (v === 'week') renderWeekView(container);
+    else if (v === 'month') renderMonthView(container);
+    else if (v === 'year') renderYearView(container);
+    else if (v === 'agenda') renderAgendaView(container);
+    else if (v === '4day') render4DayView(container);
+  }
+
   function renderWeekStrip() {
     var dates = getWeekDates(state.weekOffset);
     var today = todayStr();
     var dayNames = ['월','화','수','목','금','토','일'];
     document.getElementById('week-strip').innerHTML = dates.map(function(d, i) {
       var dd = parseInt(d.split('-')[2]);
-      var isToday = d === today;
-      var isSelected = d === state.currentDate;
-      var cls = (isToday ? 'today ' : '') + (isSelected ? 'selected' : '');
+      var cls = (d === today ? 'today ' : '') + (d === state.currentDate ? 'selected' : '');
       return '<div class="day-pill ' + cls + '" onclick="App.selectDay(\'' + d + '\')">' +
         '<span class="day-name">' + dayNames[i] + '</span>' +
         '<span class="day-num">' + dd + '</span>' +
         '</div>';
     }).join('');
-
-    var first = dates[0].split('-'), last = dates[6].split('-');
-    document.getElementById('week-range').textContent = parseInt(first[1]) + '월 ' + parseInt(first[2]) + '일 ~ ' + parseInt(last[1]) + '월 ' + parseInt(last[2]) + '일';
   }
 
   function selectDay(date) {
     state.currentDate = date;
-    renderWeekStrip();
-    loadSchedule();
+    if (state.viewType !== 'day') {
+      setViewType('day');
+    } else {
+      renderWeekStrip();
+      renderCurrentView();
+    }
   }
 
-  function loadSchedule() {
+  function goToMonth(year, month) {
+    var today = new Date();
+    state.monthOffset = (year - today.getFullYear()) * 12 + (month - today.getMonth());
+    setViewType('month');
+  }
+
+  // -- Day view --
+  function renderDayView(container) {
     document.getElementById('schedule-date-label').textContent = formatDateKo(state.currentDate);
-    document.getElementById('schedule-cards').innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div>';
-    var qs = '?date=' + state.currentDate;
-    if (state.region) qs += '&region=' + encodeURIComponent(state.region);
-    fetch('/api/registrations' + qs)
-      .then(function(r) { return r.json(); })
-      .then(function(res) {
-        state.scheduleList = Array.isArray(res) ? res : [];
-        renderScheduleCards();
-      })
-      .catch(function(){ showToast('시간표를 불러오지 못했습니다.', 'error'); });
+    fetchDay(state.currentDate).then(function(list) {
+      state.scheduleList = list;
+      renderScheduleCards();
+    }).catch(function(){ showToast('시간표를 불러오지 못했습니다.', 'error'); });
   }
 
   function renderScheduleCards() {
@@ -932,12 +1174,148 @@ const App = (() => {
         '<div class="scard-body">' +
           '<div class="scard-name">' + r['이름'] + ' 강사</div>' +
           '<div class="scard-time">🕐 ' + r['시작시간'] + ' ~ ' + r['종료시간'] + '</div>' +
-          '<div class="scard-meta">' +
-            '<span class="scard-region-tag">📍 ' + r['지역'] + '</span>' +
-          '</div>' +
+          '<div class="scard-meta"><span class="scard-region-tag">📍 ' + r['지역'] + '</span></div>' +
         '</div>' +
         '</div>';
     }).join('');
+  }
+
+  // -- Week view --
+  function renderWeekView(container) {
+    var dates = getWeekDates(state.weekOffset);
+    var today = todayStr();
+    var dayNames = ['월','화','수','목','금','토','일'];
+    fetchRange(dates[0], 7).then(function(dataMap) {
+      var html = '<div class="col-view col-view-7">';
+      dates.forEach(function(d, i) {
+        var list = dataMap[d] || [];
+        var hdr = '<div class="col-day-header' + (d === today ? ' is-today' : '') + (d === state.currentDate ? ' is-selected' : '') + '" onclick="App.selectDay(\'' + d + '\')">' +
+          '<div class="col-dn">' + dayNames[i] + '</div>' +
+          '<div class="col-dd">' + parseInt(d.split('-')[2]) + '</div>' +
+          '</div>';
+        var body = '<div class="col-day-body">';
+        if (!list.length) { body += '<div class="col-empty">-</div>'; }
+        else { list.forEach(function(r) { body += '<div class="col-event"><div class="col-event-name">' + r['이름'] + '</div><div class="col-event-time">' + r['시작시간'] + '~' + r['종료시간'] + '</div></div>'; }); }
+        body += '</div>';
+        html += '<div class="col-day">' + hdr + body + '</div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }).catch(function(){ container.innerHTML = '<p style="color:red;padding:20px">오류가 발생했습니다.</p>'; });
+  }
+
+  // -- Month view --
+  function renderMonthView(container) {
+    var my = getMonthYear();
+    var year = my.year, month = my.month;
+    var firstDay = new Date(year, month, 1);
+    var lastDay = new Date(year, month + 1, 0);
+    var startDow = (firstDay.getDay() + 6) % 7;
+    var totalDays = lastDay.getDate();
+    var today = todayStr();
+    var gridStart = new Date(firstDay);
+    gridStart.setDate(gridStart.getDate() - startDow);
+    var gsStr = gridStart.getFullYear() + '-' + String(gridStart.getMonth()+1).padStart(2,'0') + '-' + String(gridStart.getDate()).padStart(2,'0');
+    var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
+    fetchRange(gsStr, gridDays).then(function(dataMap) {
+      var dow = ['월','화','수','목','금','토','일'];
+      var html = '<div class="month-view"><div class="month-dow-row">';
+      dow.forEach(function(d){ html += '<span>' + d + '</span>'; });
+      html += '</div><div class="month-grid">';
+      for (var i = 0; i < gridDays; i++) {
+        var d = addDays(gsStr, i);
+        var dp = d.split('-');
+        var isOther = parseInt(dp[1]) - 1 !== month;
+        var isToday = d === today;
+        var isSel = d === state.currentDate;
+        var list = dataMap[d] || [];
+        var dots = Math.min(list.length, 3);
+        var cls = 'm-day' + (isOther ? ' other-mo' : '') + (isToday ? ' is-today' : '') + (isSel ? ' is-selected' : '');
+        html += '<div class="' + cls + '" onclick="App.selectDay(\'' + d + '\')">';
+        html += '<div class="m-num-wrap"><span class="m-num">' + parseInt(dp[2]) + '</span></div>';
+        if (dots > 0) { html += '<div class="m-dots">'; for (var j = 0; j < dots; j++) html += '<div class="m-dot"></div>'; html += '</div>'; }
+        html += '</div>';
+      }
+      html += '</div></div>';
+      container.innerHTML = html;
+    }).catch(function(){ container.innerHTML = '<p style="color:red;padding:20px">오류가 발생했습니다.</p>'; });
+  }
+
+  // -- Year view --
+  function renderYearView(container) {
+    var year = getViewYear();
+    var today = todayStr();
+    var html = '<div class="year-view">';
+    for (var m = 0; m < 12; m++) {
+      var firstDay = new Date(year, m, 1);
+      var startDow = (firstDay.getDay() + 6) % 7;
+      var totalDays = new Date(year, m + 1, 0).getDate();
+      html += '<div class="yr-mo-cell" onclick="App.goToMonth(' + year + ',' + m + ')">';
+      html += '<div class="yr-mo-name">' + (m+1) + '월</div><div class="yr-mo-mini">';
+      ['월','화','수','목','금','토','일'].forEach(function(d){ html += '<div class="yr-mini-d hd">' + d + '</div>'; });
+      for (var e = 0; e < startDow; e++) html += '<div class="yr-mini-d other"></div>';
+      for (var day = 1; day <= totalDays; day++) {
+        var dStr = year + '-' + String(m+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+        html += '<div class="yr-mini-d' + (dStr === today ? ' today-d' : '') + '">' + day + '</div>';
+      }
+      html += '</div></div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // -- Agenda view --
+  function renderAgendaView(container) {
+    var start = todayStr();
+    fetchRange(start, 30).then(function(dataMap) {
+      var html = '<div class="agenda-list">';
+      var hasAny = false;
+      for (var i = 0; i < 30; i++) {
+        var d = addDays(start, i);
+        var list = dataMap[d] || [];
+        if (!list.length) continue;
+        hasAny = true;
+        var dp = d.split('-');
+        var dayObj = new Date(d + 'T00:00:00');
+        var isToday = d === start;
+        html += '<div class="agenda-date-hdr' + (isToday ? ' is-today' : '') + '">';
+        html += '<div class="agenda-day-num">' + parseInt(dp[2]) + '</div>';
+        html += '<div class="agenda-day-info">' + parseInt(dp[1]) + '월 (' + DAYS_KO[dayObj.getDay()] + ')</div>';
+        html += '</div>';
+        list.forEach(function(r) {
+          html += '<div class="agenda-ev"><div class="agenda-ev-time">' + r['시작시간'] + ' ~ ' + r['종료시간'] + '</div><div class="agenda-ev-name">👩‍🏫 ' + r['이름'] + ' 강사</div><div class="agenda-ev-region">📍 ' + r['지역'] + '</div></div>';
+        });
+      }
+      if (!hasAny) html += '<div style="text-align:center;padding:60px 20px;color:var(--gray-300)"><div style="font-size:48px;margin-bottom:16px">📋</div><p>향후 30일간 등록된 일정이 없습니다</p></div>';
+      html += '</div>';
+      container.innerHTML = html;
+    }).catch(function(){ container.innerHTML = '<p style="color:red;padding:20px">오류가 발생했습니다.</p>'; });
+  }
+
+  // -- 4-day view --
+  function render4DayView(container) {
+    var start = state.currentDate;
+    var today = todayStr();
+    fetchRange(start, 4).then(function(dataMap) {
+      var html = '<div class="col-view col-view-4">';
+      for (var i = 0; i < 4; i++) {
+        var d = addDays(start, i);
+        var dp = d.split('-');
+        var dayObj = new Date(d + 'T00:00:00');
+        var list = dataMap[d] || [];
+        var hdr = '<div class="col-day-header' + (d === today ? ' is-today' : '') + (d === start ? ' is-selected' : '') + '" onclick="App.selectDay(\'' + d + '\')">' +
+          '<div class="col-dn">' + DAYS_KO[dayObj.getDay()] + '</div>' +
+          '<div class="col-dd">' + parseInt(dp[2]) + '</div>' +
+          '</div>';
+        var body = '<div class="col-day-body">';
+        if (!list.length) { body += '<div class="col-empty">일정 없음</div>'; }
+        else { list.forEach(function(r) { body += '<div class="col-event"><div class="col-event-name">' + r['이름'] + '</div><div class="col-event-time">' + r['시작시간'] + '~' + r['종료시간'] + '</div></div>'; }); }
+        body += '</div>';
+        html += '<div class="col-day">' + hdr + body + '</div>';
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }).catch(function(){ container.innerHTML = '<p style="color:red;padding:20px">오류가 발생했습니다.</p>'; });
   }
 
   // ---- INIT ----
@@ -960,7 +1338,7 @@ const App = (() => {
     initLanding();
   }
 
-  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay };
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth };
 })();
 
 window.addEventListener('load', function(){ App.init(); });
