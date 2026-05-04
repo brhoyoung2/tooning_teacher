@@ -671,8 +671,6 @@
   <div class="canvas-wrap" id="canvas-container"></div>
   <div class="landing-inner">
     <div class="landing-logo-wrap">
-      <img src="https://yt3.googleusercontent.com/U94zzlLDbgrOeTFNp0WHjRD1YrZ-CYCb6vxxxoAedp3Khv6W8vQMbyMVZw-T3XT8p3flgF8O=s900-c-k-c0x00ffffff-no-rj"
-        alt="Tooning" class="landing-logo" onerror="this.style.display='none'">
       <div>
         <div class="landing-title">AI 투닝 교육,<br><span>투닝 전문가 선생님들의</span><br>교육지원 서비스</div>
         <div class="landing-subtitle">Tooning Instructor Schedule Management</div>
@@ -1664,7 +1662,7 @@ class Bubbles {
     this.balls = [];
     this.planes = [];
     this.mousePos = new THREE.Vector2(0, 0);
-    this.ballColor = '#FF2778';
+    this.ballColor = '#38BDF8';
   }
   init() {
     if (!this.container) return;
@@ -1764,7 +1762,7 @@ class Bubbles {
     const d = new THREE.DirectionalLight('#ffffff', 4);
     d.position.set(0, 5, -5);
     this.scene.add(d);
-    const s = new THREE.SpotLight(new THREE.Color(this.ballColor));
+    const s = new THREE.SpotLight(new THREE.Color('#7DD3FC'));
     s.position.set(20, 20, 25);
     this.scene.add(s);
   }
