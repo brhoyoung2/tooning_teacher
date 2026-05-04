@@ -847,94 +847,26 @@ const App = (() => {
   function selectInstRegion(region) {
     state.instSelectedRegion = region;
     state.region = region;
+    state.currentDate = todayStr();
     scheduleCache = {};
     renderInstStep2();
   }
 
-  // Step 2: 날짜 선택 (달력)
+  // Step 2: 시간 현황 + 날짜 이동 + 등록
   function renderInstStep2() {
     state.instStep = 2;
     var regionLabel = state.instSelectedRegion || '전체 지역';
     var gv = document.getElementById('grid-view');
     gv.innerHTML =
-      '<div class="date-step">' +
-      '<div class="step-back-row">' +
-        '<button class="btn-step-back" onclick="App.goInstStep(1)">‹</button>' +
-        '<div class="step-back-label">📍 <em>' + regionLabel + '</em> · 날짜 선택</div>' +
-      '</div>' +
-      '<div class="cal-nav-row">' +
-        '<button class="btn-nav" id="inst-cal-prev">‹</button>' +
-        '<span class="cal-month-label" id="inst-cal-label"></span>' +
-        '<button class="btn-nav" id="inst-cal-next">›</button>' +
-      '</div>' +
-      '<div class="month-dow-row"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>' +
-      '<div id="inst-cal-grid" class="month-grid"></div>' +
-      '<p style="text-align:center;color:var(--gray-400);font-size:12px;margin-top:16px;">날짜를 클릭하면 시간 현황으로 이동해요</p>' +
-      '</div>';
-    document.getElementById('inst-cal-prev').onclick = function(){ state.instCalMonthOffset--; refreshInstCalGrid(); };
-    document.getElementById('inst-cal-next').onclick = function(){ state.instCalMonthOffset++; refreshInstCalGrid(); };
-    refreshInstCalGrid();
-  }
-
-  function getInstCalMonthYear() {
-    var today = new Date();
-    var d = new Date(today.getFullYear(), today.getMonth() + (state.instCalMonthOffset || 0), 1);
-    return { year: d.getFullYear(), month: d.getMonth() };
-  }
-
-  function refreshInstCalGrid() {
-    var my = getInstCalMonthYear();
-    var year = my.year, month = my.month;
-    var lbl = document.getElementById('inst-cal-label');
-    if (lbl) lbl.textContent = year + '년 ' + (month + 1) + '월';
-    var firstDay = new Date(year, month, 1);
-    var startDow = (firstDay.getDay() + 6) % 7;
-    var totalDays = new Date(year, month + 1, 0).getDate();
-    var today = todayStr();
-    var gs = new Date(firstDay);
-    gs.setDate(gs.getDate() - startDow);
-    var gsStr = gs.getFullYear() + '-' + String(gs.getMonth()+1).padStart(2,'0') + '-' + String(gs.getDate()).padStart(2,'0');
-    var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
-    var grid = document.getElementById('inst-cal-grid');
-    if (!grid) return;
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;font-size:12px;color:#aaa;">불러오는 중...</div>';
-    fetchRange(gsStr, gridDays).then(function(dataMap) {
-      var html = '';
-      for (var i = 0; i < gridDays; i++) {
-        var d = addDays(gsStr, i);
-        var dp = d.split('-');
-        var isOther = parseInt(dp[1]) - 1 !== month;
-        var isToday = d === today;
-        var isPast = d < today;
-        var isSel = d === state.currentDate;
-        var list = dataMap[d] || [];
-        var dots = Math.min(list.length, 3);
-        var cls = 'm-day' + (isOther ? ' other-mo' : '') + (isToday ? ' is-today' : '') + (isSel ? ' is-selected' : '') + (isPast && !isToday ? ' past-day' : '');
-        html += '<div class="' + cls + '" onclick="App.selectInstDate(\'' + d + '\')">';
-        html += '<div class="m-num-wrap"><span class="m-num">' + parseInt(dp[2]) + '</span></div>';
-        if (dots > 0) { html += '<div class="m-dots">'; for (var j = 0; j < dots; j++) html += '<div class="m-dot"></div>'; html += '</div>'; }
-        html += '</div>';
-      }
-      if (grid) grid.innerHTML = html;
-    });
-  }
-
-  function selectInstDate(date) {
-    state.currentDate = date;
-    renderInstStep3();
-  }
-
-  // Step 3: 시간 현황 + 등록
-  function renderInstStep3() {
-    state.instStep = 3;
-    var regionLabel = state.instSelectedRegion || '전체 지역';
-    var gv = document.getElementById('grid-view');
-    gv.innerHTML =
       '<div class="time-step-hdr">' +
-        '<button class="btn-step-back" onclick="App.goInstStep(2)">‹</button>' +
+        '<button class="btn-step-back" onclick="App.goInstStep(1)">‹</button>' +
         '<div class="time-step-info">' +
           '<div class="time-step-region-tag">📍 ' + regionLabel + '</div>' +
-          '<div class="time-step-date-label">' + formatDateKo(state.currentDate) + '</div>' +
+          '<div class="time-step-date-label" id="inst-date-title">' + formatDateKo(state.currentDate) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<button class="btn-nav" id="inst-day-prev">‹</button>' +
+          '<button class="btn-nav" id="inst-day-next">›</button>' +
         '</div>' +
       '</div>' +
       '<div class="time-step-body">' +
@@ -944,17 +876,25 @@ const App = (() => {
         '</div>' +
         '<div class="time-grid-wrap">' +
           '<div class="time-grid-header"><span>시간</span><span>상태</span></div>' +
-          '<div id="time-grid-body"><div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div></div>' +
+          '<div id="time-grid-body"></div>' +
         '</div>' +
         '<button class="btn-reg-big" onclick="App.openRegModal()">＋ 강의 시간 등록하기</button>' +
       '</div>';
+    document.getElementById('inst-day-prev').onclick = function(){ instChangeDate(-1); };
+    document.getElementById('inst-day-next').onclick = function(){ instChangeDate(1); };
+    loadSlots();
+  }
+
+  function instChangeDate(delta) {
+    state.currentDate = addDays(state.currentDate, delta);
+    var t = document.getElementById('inst-date-title');
+    if (t) t.textContent = formatDateKo(state.currentDate);
     loadSlots();
   }
 
   function goInstStep(step) {
     if (step === 1) renderInstStep1();
     else if (step === 2) renderInstStep2();
-    else if (step === 3) renderInstStep3();
   }
 
   function openRegModal() { openRegisterModal(); }
@@ -1504,7 +1444,7 @@ const App = (() => {
     initLanding();
   }
 
-  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, selectInstRegion: selectInstRegion, selectInstDate: selectInstDate, goInstStep: goInstStep, openRegModal: openRegModal };
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, selectInstRegion: selectInstRegion, goInstStep: goInstStep, openRegModal: openRegModal };
 })();
 
 window.addEventListener('load', function(){ App.init(); });
