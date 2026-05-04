@@ -673,14 +673,13 @@ const App = (() => {
   }
 
   function loadSlots() {
-    showLoading('시간표 불러오는 중...');
+    document.getElementById('time-grid-body').innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div>';
     google.script.run
       .withSuccessHandler(function(res) {
-        hideLoading();
         if (res && res.success) { state.slotStatus = res.slots; renderTimeGrid(); }
         else showToast((res && res.message) || '오류가 발생했습니다.', 'error');
       })
-      .withFailureHandler(function(err) { hideLoading(); showToast('서버 오류: ' + (err && err.message ? err.message : '알 수 없는 오류'), 'error'); })
+      .withFailureHandler(function(err) { showToast('서버 오류: ' + (err && err.message ? err.message : '알 수 없는 오류'), 'error'); })
       .getSlotStatus(state.currentDate, state.region || '');
   }
 
@@ -905,14 +904,13 @@ const App = (() => {
 
   function loadSchedule() {
     document.getElementById('schedule-date-label').textContent = formatDateKo(state.currentDate);
-    showLoading('강사 시간표 불러오는 중...');
+    document.getElementById('schedule-cards').innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div>';
     google.script.run
       .withSuccessHandler(function(res) {
-        hideLoading();
         state.scheduleList = Array.isArray(res) ? res : [];
         renderScheduleCards();
       })
-      .withFailureHandler(function(){ hideLoading(); showToast('시간표를 불러오지 못했습니다.', 'error'); })
+      .withFailureHandler(function(){ showToast('시간표를 불러오지 못했습니다.', 'error'); })
       .getRegisteredTimes({ date: state.currentDate, region: state.region || undefined });
   }
 

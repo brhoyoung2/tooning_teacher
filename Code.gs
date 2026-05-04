@@ -5,7 +5,7 @@
 const SHEET_NAME = '강사시간등록';
 const SPREADSHEET_ID = '1mwt1Mo8NieWipz7tYsDjGNWFbBHavA9GDYeDoB51f60';
 const REGIONS = ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
-const VERSION = 'v1.2.0'; // 날짜·시간 Date 객체 변환 버그 수정
+const VERSION = 'v1.3.0'; // 서버 캐시 + 로딩 UX 개선
 
 // ---- 웹앱 진입점 ----
 function doGet(e) {
@@ -102,6 +102,11 @@ function registerTime(data) {
     const lastRow = sheet.getLastRow();
     sheet.getRange(lastRow, 5, 1, 3).setNumberFormat('@');
 
+    // 캐시 무효화
+    const cache = CacheService.getScriptCache();
+    cache.remove('slots_' + data.date + '_' + data.region);
+    cache.remove('slots_' + data.date + '_');
+
     return { success: true, message: `${data.name} 강사님의 강의 시간이 등록되었습니다! 📅` };
   } catch (e) {
     return { success: false, message: '서버 오류: ' + e.message };
@@ -140,9 +145,14 @@ function getRegisteredTimes_(filter) {
   });
 }
 
-// ---- 슬롯 상태 반환 ----
+// ---- 슬롯 상태 반환 (캐시 적용) ----
 function getSlotStatus(date, region) {
   try {
+    const cacheKey = 'slots_' + date + '_' + (region || '');
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
     const registrations = getRegisteredTimes_({ date: date, region: region || '' });
     const slots = {};
     for (let h = 9; h <= 20; h++) {
@@ -155,7 +165,9 @@ function getSlotStatus(date, region) {
         ? { booked: true,  name: occ['이름'], region: occ['지역'] }
         : { booked: false };
     }
-    return { success: true, slots: slots };
+    const result = { success: true, slots: slots };
+    cache.put(cacheKey, JSON.stringify(result), 60);
+    return result;
   } catch (e) {
     return { success: false, message: e.message };
   }
