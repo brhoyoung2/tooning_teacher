@@ -674,13 +674,13 @@ const App = (() => {
 
   function loadSlots() {
     document.getElementById('time-grid-body').innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div>';
-    google.script.run
-      .withSuccessHandler(function(res) {
+    fetch('/api/slots?date=' + state.currentDate + '&region=' + encodeURIComponent(state.region || ''))
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
         if (res && res.success) { state.slotStatus = res.slots; renderTimeGrid(); }
         else showToast((res && res.message) || '오류가 발생했습니다.', 'error');
       })
-      .withFailureHandler(function(err) { showToast('서버 오류: ' + (err && err.message ? err.message : '알 수 없는 오류'), 'error'); })
-      .getSlotStatus(state.currentDate, state.region || '');
+      .catch(function() { showToast('서버 오류가 발생했습니다.', 'error'); });
   }
 
   function renderTimeGrid() {
@@ -744,8 +744,9 @@ const App = (() => {
   function renderTimeChips(date, region) {
     if (!date) return;
     showLoading('시간 정보 확인 중...');
-    google.script.run
-      .withSuccessHandler(function(res) {
+    fetch('/api/slots?date=' + date + '&region=' + encodeURIComponent(region || ''))
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
         hideLoading();
         if (!res || !res.success) return;
         var slots = res.slots;
@@ -759,8 +760,7 @@ const App = (() => {
           return '<button class="time-chip ' + cls + '" data-hour="' + h + '" onclick="App.toggleChip(this,\'' + h + '\')" ' + disabled + '>' + label + '</button>';
         }).join('');
       })
-      .withFailureHandler(function(){ hideLoading(); })
-      .getSlotStatus(date, region || '');
+      .catch(function(){ hideLoading(); });
   }
 
   function toggleChip(el, hour) {
@@ -819,8 +819,13 @@ const App = (() => {
 
     closeRegisterModal();
     showLoading('등록 중...');
-    google.script.run
-      .withSuccessHandler(function(res) {
+    fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, phone: phone, region: region, date: date, startTime: startTime, endTime: endTime })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
         hideLoading();
         if (res && res.success) {
           showToast(res.message, 'success');
@@ -833,20 +838,24 @@ const App = (() => {
           document.getElementById('overlay-modal').classList.add('active');
         }
       })
-      .withFailureHandler(function() {
+      .catch(function() {
         hideLoading();
         showToast('등록 중 오류가 발생했습니다.', 'error');
         document.getElementById('overlay-modal').classList.add('active');
-      })
-      .registerTime({ name: name, phone: phone, region: region, date: date, startTime: startTime, endTime: endTime });
+      });
   }
 
   function cancelReg(id, phone) {
     var ph = prompt('등록 취소를 위해 휴대폰 번호를 입력해주세요:');
     if (!ph) return;
     showLoading('취소 처리 중...');
-    google.script.run
-      .withSuccessHandler(function(res) {
+    fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, phone: ph })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
         hideLoading();
         if (res && res.success) {
           showToast(res.message, 'success');
@@ -855,8 +864,7 @@ const App = (() => {
           renderMineView();
         } else { showToast((res && res.message) || '취소 중 오류가 발생했습니다.', 'error'); }
       })
-      .withFailureHandler(function(){ hideLoading(); showToast('취소 중 오류가 발생했습니다.', 'error'); })
-      .deleteRegistration(id, ph);
+      .catch(function(){ hideLoading(); showToast('취소 중 오류가 발생했습니다.', 'error'); });
   }
 
   // ---- TEACHER ----
@@ -905,13 +913,15 @@ const App = (() => {
   function loadSchedule() {
     document.getElementById('schedule-date-label').textContent = formatDateKo(state.currentDate);
     document.getElementById('schedule-cards').innerHTML = '<div style="text-align:center;padding:40px 0;color:#aaa;"><div class="spinner" style="margin:0 auto 12px;border-top-color:#FF2778;"></div><p style="font-size:13px;">시간표 불러오는 중...</p></div>';
-    google.script.run
-      .withSuccessHandler(function(res) {
+    var qs = '?date=' + state.currentDate;
+    if (state.region) qs += '&region=' + encodeURIComponent(state.region);
+    fetch('/api/registrations' + qs)
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
         state.scheduleList = Array.isArray(res) ? res : [];
         renderScheduleCards();
       })
-      .withFailureHandler(function(){ showToast('시간표를 불러오지 못했습니다.', 'error'); })
-      .getRegisteredTimes({ date: state.currentDate, region: state.region || undefined });
+      .catch(function(){ showToast('시간표를 불러오지 못했습니다.', 'error'); });
   }
 
   function renderScheduleCards() {
@@ -936,22 +946,20 @@ const App = (() => {
 
   // ---- INIT ----
   function init() {
-    // 버전 로드
-    google.script.run
-      .withSuccessHandler(function(ver) {
+    fetch('/api/version')
+      .then(function(r) { return r.json(); })
+      .then(function(ver) {
         var el = document.getElementById('app-version');
         if (el) el.textContent = ver || '';
-      })
-      .getVersion();
+      });
 
-    // 지역 목록 로드
-    google.script.run
-      .withSuccessHandler(function(regions) {
+    fetch('/api/regions')
+      .then(function(r) { return r.json(); })
+      .then(function(regions) {
         state.regions = regions || [];
         var opts = '<option value="">지역 선택</option>' + state.regions.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
         document.getElementById('reg-region').innerHTML = opts;
-      })
-      .getRegions();
+      });
 
     initLanding();
   }
