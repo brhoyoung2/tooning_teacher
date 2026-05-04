@@ -35,7 +35,7 @@ jobs:
           echo "배포 버전: $VERSION"
 
       - name: 새 버전 배포 (deploy)
-        run: clasp deploy --description "${{ steps.version.outputs.version }}"
+        run: clasp deploy --deploymentId AKfycbwJAyM1EfbiOuy1anuTC8zQQIBeaxIvDQTBKjrvhHUPIaBx8X62xFpved3Y0ZcemAxF9Q --description "${{ steps.version.outputs.version }}"
 
       - name: 배포 완료 알림
         run: |
