@@ -13,10 +13,11 @@ module.exports = async function(req, res) {
     for (let h = 9; h <= 20; h++) {
       const key = String(h).padStart(2, '0') + ':00';
       const slotEnd = String(h + 1).padStart(2, '0') + ':00';
-      const occ = registrations.find(r => timeOverlap(r['시작시간'], r['종료시간'], key, slotEnd));
-      slots[key] = occ
-        ? { booked: true, name: occ['이름'], region: occ['지역'] }
-        : { booked: false };
+      const occ = registrations.filter(r => timeOverlap(r['시작시간'], r['종료시간'], key, slotEnd));
+      slots[key] = {
+        count: occ.length,
+        instructors: occ.map(r => ({ name: r['이름'], region: r['지역'] }))
+      };
     }
     res.json({ success: true, slots });
   } catch (e) {

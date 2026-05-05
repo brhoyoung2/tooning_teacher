@@ -655,11 +655,88 @@
       </div>
       <div class="form-group">
         <label class="form-label">가능 시간 선택 <span class="required">*</span></label>
-        <p class="form-hint">연속된 시간대를 선택해주세요. 취소선 시간은 이미 예약되었습니다.</p>
+        <p class="form-hint">연속된 시간대를 선택해주세요. 괄호 안 숫자는 해당 시간대 등록 강사 수입니다.</p>
         <div class="time-chips" id="time-chips-wrap"></div>
         <div class="selected-time-display" id="selected-time-display">시간을 선택해주세요</div>
       </div>
       <button class="btn-submit" onclick="App.submitRegister()">✅ 강의 시간 등록하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-request">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📩 강사 추가 요청</div>
+        <div class="modal-subtitle">학교에 필요한 강사 수와 일정을 알려주세요</div>
+      </div>
+      <button class="btn-close" onclick="App.closeRequestModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">학교명 <span class="required">*</span></label>
+        <input type="text" id="req-school" class="form-input" placeholder="○○초등학교" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label class="form-label">담당 선생님 이름 <span class="required">*</span></label>
+        <input type="text" id="req-teacher" class="form-input" placeholder="이름 입력" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">연락처 <span class="required">*</span></label>
+        <input type="tel" id="req-phone" class="form-input" placeholder="010-0000-0000" maxlength="13">
+      </div>
+      <div class="form-group">
+        <label class="form-label">희망 날짜 <span class="required">*</span></label>
+        <input type="date" id="req-date" class="form-input">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label class="form-label">희망 시작 시간</label>
+          <select id="req-start" class="form-select">
+            <option value="">선택</option>
+            <option>09:00</option><option>10:00</option><option>11:00</option>
+            <option>12:00</option><option>13:00</option><option>14:00</option>
+            <option>15:00</option><option>16:00</option><option>17:00</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">희망 종료 시간</label>
+          <select id="req-end" class="form-select">
+            <option value="">선택</option>
+            <option>10:00</option><option>11:00</option><option>12:00</option>
+            <option>13:00</option><option>14:00</option><option>15:00</option>
+            <option>16:00</option><option>17:00</option><option>18:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">필요 강사 수 (수업 반 수) <span class="required">*</span></label>
+        <select id="req-class-count" class="form-select">
+          <option value="">선택해주세요</option>
+          <option value="1">1명 (1반)</option>
+          <option value="2">2명 (2반)</option>
+          <option value="3">3명 (3반)</option>
+          <option value="4">4명 (4반)</option>
+          <option value="5">5명 (5반)</option>
+          <option value="6">6명 (6반)</option>
+          <option value="7">7명 (7반)</option>
+          <option value="8">8명 (8반)</option>
+          <option value="9">9명 (9반)</option>
+          <option value="10">10명 (10반)</option>
+          <option value="11">11명 (11반)</option>
+          <option value="12">12명 (12반)</option>
+          <option value="13">13명 (13반)</option>
+          <option value="14">14명 (14반)</option>
+          <option value="15">15명 (15반)</option>
+          <option value="20">20명 이상</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">추가 요청 내용</label>
+        <textarea id="req-note" class="form-input" rows="2" placeholder="특이사항이 있으면 입력해주세요" style="resize:none;"></textarea>
+      </div>
+      <button class="btn-submit" style="background:linear-gradient(135deg,var(--secondary),#4C3D9E);box-shadow:0 8px 24px rgba(108,99,255,0.35)" onclick="App.submitTeacherRequest()">📩 강사 요청 접수하기</button>
     </div>
   </div>
 </div>
@@ -1073,10 +1150,17 @@ const App = (() => {
 
   function renderTimeGrid() {
     document.getElementById('time-grid-body').innerHTML = HOURS.map(function(h) {
-      var slot = state.slotStatus[h] || { booked: false };
-      var cls = slot.booked ? 'slot-booked' : 'slot-available';
-      var text = slot.booked ? (slot.name + ' 강사 예약됨') : '등록 가능';
-      var tag = slot.booked ? '<span class="slot-booked-tag">예약중</span>' : '';
+      var slot = state.slotStatus[h] || { count: 0, instructors: [] };
+      var count = slot.count || 0;
+      var cls = count > 0 ? 'slot-booked' : 'slot-available';
+      var text, tag;
+      if (count === 0) {
+        text = '등록 가능'; tag = '';
+      } else {
+        var names = (slot.instructors || []).slice(0, 2).map(function(i){ return i.name; }).join(', ');
+        text = names + (count > 2 ? ' 외 ' + (count - 2) + '명' : '');
+        tag = '<span class="slot-booked-tag">' + count + '명 등록</span>';
+      }
       return '<div class="time-slot-row ' + cls + '">' +
         '<div class="time-label">' + h + '</div>' +
         '<div class="time-cell"><div class="slot-indicator"></div><span class="slot-text">' + text + '</span>' + tag + '</div>' +
@@ -1141,18 +1225,16 @@ const App = (() => {
         state.selectedSlots = [];
         updateSelectedTimeDisplay();
         document.getElementById('time-chips-wrap').innerHTML = HOURS.map(function(h) {
-          var slot = slots[h] || { booked: false };
-          var cls = slot.booked ? 'chip-booked' : '';
-          var label = slot.booked ? h + ' 예약됨' : h;
-          var disabled = slot.booked ? 'disabled' : '';
-          return '<button class="time-chip ' + cls + '" data-hour="' + h + '" onclick="App.toggleChip(this,\'' + h + '\')" ' + disabled + '>' + label + '</button>';
+          var slot = slots[h] || { count: 0 };
+          var count = slot.count || 0;
+          var countBadge = count > 0 ? ' <span style="font-size:10px;opacity:0.75;font-weight:600">(' + count + '명)</span>' : '';
+          return '<button class="time-chip" data-hour="' + h + '" onclick="App.toggleChip(this,\'' + h + '\')">' + h + countBadge + '</button>';
         }).join('');
       })
       .catch(function(){ hideLoading(); });
   }
 
   function toggleChip(el, hour) {
-    if (el.classList.contains('chip-booked')) return;
     el.classList.toggle('chip-selected');
     var idx = state.selectedSlots.indexOf(hour);
     if (idx > -1) state.selectedSlots.splice(idx, 1);
@@ -1472,21 +1554,74 @@ const App = (() => {
     if (!el) return;
     el.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;"><div class="spinner" style="margin:0 auto 10px;border-top-color:var(--secondary);"></div><p style="font-size:13px;">불러오는 중...</p></div>';
     fetchDay(state.currentDate).then(function(list) {
-      if (!list.length) {
-        el.innerHTML = '<div class="schedule-empty"><div class="empty-icon">📋</div><p>등록된 강사 일정이 없습니다</p><small>' + formatDateKo(state.currentDate) + '에는 등록된 강의가 없어요</small></div>';
-        return;
-      }
-      el.innerHTML = list.map(function(r) {
-        return '<div class="schedule-card" style="margin-bottom:10px;">' +
-          '<div class="scard-icon" style="background:linear-gradient(135deg,var(--secondary),#4C3D9E)">👩‍🏫</div>' +
-          '<div class="scard-body">' +
-            '<div class="scard-name">' + r['이름'] + ' 강사</div>' +
-            '<div class="scard-time" style="color:var(--secondary)">🕐 ' + r['시작시간'] + ' ~ ' + r['종료시간'] + '</div>' +
-            '<div class="scard-meta"><span class="scard-region-tag">📍 ' + r['지역'] + '</span></div>' +
-          '</div>' +
+      var cards = list.length
+        ? list.map(function(r) {
+            return '<div class="schedule-card" style="margin-bottom:10px;">' +
+              '<div class="scard-icon" style="background:linear-gradient(135deg,var(--secondary),#4C3D9E)">👩‍🏫</div>' +
+              '<div class="scard-body">' +
+                '<div class="scard-name">' + r['이름'] + ' 강사</div>' +
+                '<div class="scard-time" style="color:var(--secondary)">🕐 ' + r['시작시간'] + ' ~ ' + r['종료시간'] + '</div>' +
+                '<div class="scard-meta"><span class="scard-region-tag">📍 ' + r['지역'] + '</span></div>' +
+              '</div></div>';
+          }).join('')
+        : '<div class="schedule-empty"><div class="empty-icon">📋</div><p>등록된 강사 일정이 없습니다</p><small>' + formatDateKo(state.currentDate) + '에는 등록된 강의가 없어요</small></div>';
+
+      var requestBtn =
+        '<div style="margin-top:16px;padding:16px;background:#F5F3FF;border-radius:16px;border:1.5px dashed var(--secondary);">' +
+          '<div style="font-size:13px;color:var(--gray-600);margin-bottom:8px;font-weight:600;">🏫 ' + (list.length > 0 ? list.length + '명 강사가 등록되어 있습니다.' : '아직 등록된 강사가 없습니다.') + '</div>' +
+          '<div style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">학교에 더 많은 강사가 필요하신가요? 반 수에 맞춰 강사를 요청하세요.</div>' +
+          '<button onclick="App.openRequestModal()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--secondary),#4C3D9E);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(108,99,255,0.3);">📩 강사 추가 요청하기</button>' +
         '</div>';
-      }).join('');
+
+      el.innerHTML = cards + requestBtn;
     });
+  }
+
+  function openRequestModal() {
+    document.getElementById('req-date').value = state.currentDate;
+    document.getElementById('req-date').min = todayStr();
+    document.getElementById('req-school').value = '';
+    document.getElementById('req-teacher').value = '';
+    document.getElementById('req-phone').value = '';
+    document.getElementById('req-start').value = '';
+    document.getElementById('req-end').value = '';
+    document.getElementById('req-class-count').value = '';
+    document.getElementById('req-note').value = '';
+    document.getElementById('overlay-request').classList.add('active');
+  }
+
+  function closeRequestModal() {
+    document.getElementById('overlay-request').classList.remove('active');
+  }
+
+  function submitTeacherRequest() {
+    var schoolName = document.getElementById('req-school').value.trim();
+    var teacherName = document.getElementById('req-teacher').value.trim();
+    var phone = document.getElementById('req-phone').value.trim();
+    var date = document.getElementById('req-date').value;
+    var startTime = document.getElementById('req-start').value;
+    var endTime = document.getElementById('req-end').value;
+    var classCount = document.getElementById('req-class-count').value;
+    var note = document.getElementById('req-note').value.trim();
+
+    if (!schoolName || !teacherName || !phone || !date || !classCount) {
+      showToast('필수 항목을 모두 입력해주세요.', 'warning'); return;
+    }
+
+    closeRequestModal();
+    showLoading('요청 접수 중...');
+    fetch('/api/teacher-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schoolName: schoolName, teacherName: teacherName, phone: phone, date: date, startTime: startTime, endTime: endTime, classCount: classCount, note: note })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        hideLoading();
+        if (res && res.success) showToast(res.message, 'success', 5000);
+        else { showToast((res && res.message) || '요청 중 오류가 발생했습니다.', 'error'); document.getElementById('overlay-request').classList.add('active'); }
+      })
+      .catch(function() { hideLoading(); showToast('요청 중 오류가 발생했습니다.', 'error'); document.getElementById('overlay-request').classList.add('active'); });
   }
 
   function pickTeacherDate(date) {
@@ -1691,7 +1826,7 @@ const App = (() => {
     initLanding();
   }
 
-  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, pickInstDate: pickInstDate, openRegModal: openRegModal, pickTeacherDate: pickTeacherDate };
+  return { init: init, toggleChip: toggleChip, submitRegister: submitRegister, closeRegisterModal: closeRegisterModal, cancelReg: cancelReg, selectDay: selectDay, goToMonth: goToMonth, pickInstDate: pickInstDate, openRegModal: openRegModal, pickTeacherDate: pickTeacherDate, openRequestModal: openRequestModal, closeRequestModal: closeRequestModal, submitTeacherRequest: submitTeacherRequest };
 })();
 
 window.addEventListener('load', function(){ App.init(); });
