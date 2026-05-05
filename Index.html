@@ -1031,10 +1031,13 @@ const App = (() => {
     var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
 
     container.innerHTML =
-      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
-        '<button class="btn-nav" id="inst-mo-prev">‹</button>' +
-        '<span style="font-size:16px;font-weight:700;color:var(--gray-800);">' + year + '년 ' + (month+1) + '월</span>' +
-        '<button class="btn-nav" id="inst-mo-next">›</button>' +
+      '<div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(255,39,120,0.25);">' +
+        '<button class="btn-nav" id="inst-mo-prev" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">‹</button>' +
+        '<div style="text-align:center;">' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;margin-bottom:3px;">월별 일정</div>' +
+          '<div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.5px;">' + year + '년 ' + (month+1) + '월</div>' +
+        '</div>' +
+        '<button class="btn-nav" id="inst-mo-next" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">›</button>' +
       '</div>' +
       '<div class="month-dow-row"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>' +
       '<div class="month-grid" id="inst-mo-grid"><div style="grid-column:1/-1;text-align:center;padding:16px;font-size:12px;color:#aaa;">불러오는 중...</div></div>';
@@ -1069,10 +1072,13 @@ const App = (() => {
     fetchRange(dates[0], 7).then(function(dataMap) {
       var f = dates[0].split('-'), l = dates[6].split('-');
       var html =
-        '<div class="cal-nav-row" style="margin-bottom:12px;">' +
-          '<button class="btn-nav" id="inst-wk-prev">‹</button>' +
-          '<span style="font-size:13px;font-weight:600;color:var(--gray-700);">' + parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일</span>' +
-          '<button class="btn-nav" id="inst-wk-next">›</button>' +
+        '<div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(255,39,120,0.25);">' +
+          '<button class="btn-nav" id="inst-wk-prev" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">‹</button>' +
+          '<div style="text-align:center;">' +
+            '<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;margin-bottom:3px;">주간 일정</div>' +
+            '<div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;">' + parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 &nbsp;—&nbsp; ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일</div>' +
+          '</div>' +
+          '<button class="btn-nav" id="inst-wk-next" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">›</button>' +
         '</div>' +
         '<div class="col-view col-view-7">';
       dates.forEach(function(d, i) {
@@ -1095,10 +1101,13 @@ const App = (() => {
 
   function renderInstDayInCard(container) {
     container.innerHTML =
-      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
-        '<button class="btn-nav" id="inst-dy-prev">‹</button>' +
-        '<span style="font-size:14px;font-weight:600;color:var(--gray-700);" id="inst-dy-label">' + formatDateKo(state.currentDate) + '</span>' +
-        '<button class="btn-nav" id="inst-dy-next">›</button>' +
+      '<div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(255,39,120,0.25);">' +
+        '<button class="btn-nav" id="inst-dy-prev" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">‹</button>' +
+        '<div style="text-align:center;">' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;margin-bottom:3px;">일별 일정</div>' +
+          '<div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.3px;" id="inst-dy-label">' + formatDateKo(state.currentDate) + '</div>' +
+        '</div>' +
+        '<button class="btn-nav" id="inst-dy-next" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">›</button>' +
       '</div>' +
       '<div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
         '<span style="font-size:18px;">💡</span>' +
@@ -1470,10 +1479,13 @@ const App = (() => {
     var gridDays = Math.ceil((totalDays + startDow) / 7) * 7;
 
     container.innerHTML =
-      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
-        '<button class="btn-nav" id="tch-mo-prev">‹</button>' +
-        '<span style="font-size:16px;font-weight:700;color:var(--gray-800);">' + year + '년 ' + (month+1) + '월</span>' +
-        '<button class="btn-nav" id="tch-mo-next">›</button>' +
+      '<div style="background:linear-gradient(135deg,var(--secondary),#4C3D9E);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(108,99,255,0.25);">' +
+        '<button class="btn-nav" id="tch-mo-prev" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">‹</button>' +
+        '<div style="text-align:center;">' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;margin-bottom:3px;">월별 일정</div>' +
+          '<div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.5px;">' + year + '년 ' + (month+1) + '월</div>' +
+        '</div>' +
+        '<button class="btn-nav" id="tch-mo-next" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">›</button>' +
       '</div>' +
       '<div class="month-dow-row"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>' +
       '<div class="month-grid" id="tch-mo-grid"><div style="grid-column:1/-1;text-align:center;padding:16px;font-size:12px;color:#aaa;">불러오는 중...</div></div>';
@@ -1508,10 +1520,13 @@ const App = (() => {
     fetchRange(dates[0], 7).then(function(dataMap) {
       var f = dates[0].split('-'), l = dates[6].split('-');
       var html =
-        '<div class="cal-nav-row" style="margin-bottom:12px;">' +
-          '<button class="btn-nav" id="tch-wk-prev">‹</button>' +
-          '<span style="font-size:13px;font-weight:600;color:var(--gray-700);">' + parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 ~ ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일</span>' +
-          '<button class="btn-nav" id="tch-wk-next">›</button>' +
+        '<div style="background:linear-gradient(135deg,var(--secondary),#4C3D9E);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(108,99,255,0.25);">' +
+          '<button class="btn-nav" id="tch-wk-prev" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">‹</button>' +
+          '<div style="text-align:center;">' +
+            '<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;margin-bottom:3px;">주간 일정</div>' +
+            '<div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;">' + parseInt(f[1]) + '월 ' + parseInt(f[2]) + '일 &nbsp;—&nbsp; ' + parseInt(l[1]) + '월 ' + parseInt(l[2]) + '일</div>' +
+          '</div>' +
+          '<button class="btn-nav" id="tch-wk-next" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">›</button>' +
         '</div>' +
         '<div class="col-view col-view-7">';
       dates.forEach(function(d, i) {
@@ -1534,10 +1549,13 @@ const App = (() => {
 
   function renderTeacherDayInCard(container) {
     container.innerHTML =
-      '<div class="cal-nav-row" style="margin-bottom:12px;">' +
-        '<button class="btn-nav" id="tch-dy-prev">‹</button>' +
-        '<span style="font-size:14px;font-weight:600;color:var(--gray-700);" id="tch-dy-label">' + formatDateKo(state.currentDate) + '</span>' +
-        '<button class="btn-nav" id="tch-dy-next">›</button>' +
+      '<div style="background:linear-gradient(135deg,var(--secondary),#4C3D9E);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(108,99,255,0.25);">' +
+        '<button class="btn-nav" id="tch-dy-prev" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">‹</button>' +
+        '<div style="text-align:center;">' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.5px;margin-bottom:3px;">일별 일정</div>' +
+          '<div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.3px;" id="tch-dy-label">' + formatDateKo(state.currentDate) + '</div>' +
+        '</div>' +
+        '<button class="btn-nav" id="tch-dy-next" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff;flex-shrink:0;">›</button>' +
       '</div>' +
       '<div id="teacher-schedule-list"></div>';
     document.getElementById('tch-dy-prev').onclick = function(){
