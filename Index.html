@@ -1100,9 +1100,13 @@ const App = (() => {
         '<span style="font-size:14px;font-weight:600;color:var(--gray-700);" id="inst-dy-label">' + formatDateKo(state.currentDate) + '</span>' +
         '<button class="btn-nav" id="inst-dy-next">›</button>' +
       '</div>' +
+      '<div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
+        '<span style="font-size:18px;">💡</span>' +
+        '<span style="font-size:13px;color:#166534;font-weight:600;line-height:1.5;">같은 시간대에 여러 강사님이 함께 등록할 수 있어요!<br><span style="font-weight:400;opacity:0.85">다른 강사가 있어도 자유롭게 추가 등록 가능합니다.</span></span>' +
+      '</div>' +
       '<div class="legend" style="margin-bottom:12px;">' +
         '<div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div><span>등록 가능</span></div>' +
-        '<div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>이미 예약됨</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div><span>타 강사 등록 중 (추가 가능)</span></div>' +
       '</div>' +
       '<div class="time-grid-wrap">' +
         '<div class="time-grid-header"><span>시간</span><span>상태</span></div>' +
@@ -1158,8 +1162,8 @@ const App = (() => {
         text = '등록 가능'; tag = '';
       } else {
         var names = (slot.instructors || []).slice(0, 2).map(function(i){ return i.name; }).join(', ');
-        text = names + (count > 2 ? ' 외 ' + (count - 2) + '명' : '');
-        tag = '<span class="slot-booked-tag">' + count + '명 등록</span>';
+        text = names + (count > 2 ? ' 외 ' + (count - 2) + '명' : '') + ' 강사 등록 중';
+        tag = '<span class="slot-booked-tag" style="background:#FFF0F6;color:var(--primary);border:1px solid rgba(255,39,120,0.2)">' + count + '명 · 추가등록 가능</span>';
       }
       return '<div class="time-slot-row ' + cls + '">' +
         '<div class="time-label">' + h + '</div>' +
